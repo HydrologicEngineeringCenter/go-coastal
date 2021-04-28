@@ -3,7 +3,7 @@ package hazardprovider
 import (
 	"encoding/csv"
 	"errors"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/USACE/go-consequences/geography"
@@ -19,7 +19,7 @@ func Init(fp string) csvHazardProvider {
 	// Open the file
 	csvfile, err := os.Open("input.csv")
 	if err != nil {
-		log.Fatalln("Couldn't open the csv file", err)
+		fmt.Println("Couldn't open the csv file") //, err)
 	}
 
 	// Parse the file
@@ -30,8 +30,12 @@ func (csv csvHazardProvider) Close() {
 	//do nothing?
 }
 func (csv csvHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
-	h := hazards.DepthEvent{}
-	h.SetDepth(123.45)
+	/*
+		This is where the hard part lives...
+	*/
+	h := hazards.CoastalEvent{}
+	h.SetDepth(123.45) //update from the actual file
+	h.SetSalinity(true)
 	return h, nil
 }
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
