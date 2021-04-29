@@ -22,8 +22,11 @@ func Init(fp string) csvHazardProvider {
 	fmt.Println(ds.Driver().Name())
 	fmt.Println(ds.Name())
 	fmt.Println(ds.LayerCount())
-	fmt.Println(ds.LayerByIndex(0).Extent(true)) //produces "Illegal Error"
-	fmt.Println(ds.LayerByIndex(0).FeatureCount(true))
+	fmt.Println(ds.LayerByIndex(0).Definition().FieldCount())
+	//need to figure out how to set the featuredefinition
+
+	//fmt.Println(ds.LayerByIndex(0).Extent(true)) //produces "Illegal Error"
+	//fmt.Println(ds.LayerByIndex(0).FeatureCount(true))
 	return csvHazardProvider{ds: &ds}
 }
 func (csv csvHazardProvider) Close() {
