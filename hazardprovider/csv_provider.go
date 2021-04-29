@@ -1,33 +1,34 @@
 package hazardprovider
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/USACE/go-consequences/geography"
 	"github.com/USACE/go-consequences/hazards"
+	"github.com/dewberry/gdal"
 )
 
 type csvHazardProvider struct {
-	csv *csv.Reader
+	//csv *csv.Reader
+	ds *gdal.DataSource
 }
 
 //Init creates and produces an unexported csvHazardProvider
 func Init(fp string) csvHazardProvider {
 	// Open the file
-	csvfile, err := os.Open("input.csv")
-	if err != nil {
-		fmt.Println("Couldn't open the csv file") //, err)
-	}
+	ds := gdal.OpenDataSource(fp, int(gdal.ReadOnly))
 
-	// Parse the file
-	r := csv.NewReader(csvfile)
-	return csvHazardProvider{csv: r}
+	fmt.Println(ds.Driver().Name())
+	fmt.Println(ds.Name())
+	fmt.Println(ds.LayerCount())
+	fmt.Println(ds.LayerByIndex(0).Extent(true)) //produces "Illegal Error"
+	fmt.Println(ds.LayerByIndex(0).FeatureCount(true))
+	return csvHazardProvider{ds: &ds}
 }
 func (csv csvHazardProvider) Close() {
 	//do nothing?
+	csv.ds.Destroy()
 }
 func (csv csvHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
 	/*

@@ -12,8 +12,8 @@ import (
 
 func main() {
 	nsp := structureprovider.InitNSISP()
-	hp := hazardprovider.Init("/workspaces/go_coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv") //pass in frequency?
-	sw := consequences.InitGeoJsonResultsWriterFromFile("/workspaces/go_coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.json")
+	hp := hazardprovider.Init("/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv") //pass in frequency?
+	sw := consequences.InitGeoJsonResultsWriterFromFile("/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.json")
 	fmt.Println("FIPS Code is " + "12") //for florida
 	compute.StreamAbstractByFIPS("12", hp, nsp, sw)
 
