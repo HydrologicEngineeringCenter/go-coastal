@@ -112,6 +112,7 @@ func processCSV2Tif(file string, zidx int) {
 		if zval == 0 {
 			zval = nodata
 		}
+		//convert from meters to feet?
 		wse = append(wse, zval)
 		count++
 	}
@@ -129,6 +130,7 @@ func processCSV2Tif(file string, zidx int) {
 	)
 	fmt.Println(err)
 	//convert to tif file
+	//crsWkt := `PROJCS["USA_Contiguous_Albers_Equal_Area_Conic_USGS_version",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.01745329251    99433]],PROJECTION["Albers"],PARAMETER["False_Easting",0.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",-96.0],PARAMETER["Standard_Parallel_1",29.5],PARAMETER["Standard_Parallel_2",45.5],PARAMETER["Latitude_Of_Origin",2    3.0],UNIT["Foot",0.3048]]`
 	errwse := writeTif2("abcd", "crswkt", int(nX), int(nY), minx, miny, xRes, yRes, nodata, grid)
 	if errwse != nil {
 		panic(errwse)
@@ -150,8 +152,6 @@ func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 
 	return geography.BBox{}, errors.New("stop asking these questions...")
 }
-
-//crsWkt := `PROJCS["USA_Contiguous_Albers_Equal_Area_Conic_USGS_version",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.01745329251    99433]],PROJECTION["Albers"],PARAMETER["False_Easting",0.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",-96.0],PARAMETER["Standard_Parallel_1",29.5],PARAMETER["Standard_Parallel_2",45.5],PARAMETER["Latitude_Of_Origin",2    3.0],UNIT["Foot",0.3048]]`
 
 func writeTif2(outTifName, crsWKT string, xSize, ySize int, xMin, yMin, xRes, yRes, noDataVal float64, data []float64) error {
 	fmt.Printf("Loading driver\n")
