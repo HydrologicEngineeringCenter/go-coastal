@@ -1,7 +1,5 @@
 github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20210406205650-39fdfd8e3e7d h1:ODAjh8NPL8E8fuZJEdZ6TUfVtr0midx4tYlL46d1eJg=
 github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20210406205650-39fdfd8e3e7d/go.mod h1:emMoyYiFKgCy3DPFt4uKUdHZ9FwC8k1YArGNifarbmg=
-github.com/USACE/go-consequences v0.0.0-20210417021547-67fe47714343 h1:qcIfOfdgQIbT3toAIwgqQ8+g3vcO6IeMRthAoAyu6aA=
-github.com/USACE/go-consequences v0.0.0-20210417021547-67fe47714343/go.mod h1:oR4cfQKzpxnRucbNlQEbh7JIZkNUMKQSNwHPYMvuxRc=
 github.com/USACE/go-consequences v0.0.0-20210427233721-c64c0a397779 h1:/GMDv4oMrDTNP/QxJT8GK/q/IKD/mSKsle4PZuUokbo=
 github.com/USACE/go-consequences v0.0.0-20210427233721-c64c0a397779/go.mod h1:oR4cfQKzpxnRucbNlQEbh7JIZkNUMKQSNwHPYMvuxRc=
 github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I=
@@ -10,6 +8,7 @@ github.com/dewberry/gdal v0.3.1 h1:scISo4PeC3LxjVnG2E5SYIHwbCI2LzcKvoeqbnoQNVc=
 github.com/dewberry/gdal v0.3.1/go.mod h1:3knazvb7vQFrFAl7+iWI34xP0iiRS7iRFZ1C4Jfwx7Q=
 github.com/leekchan/accounting v1.0.0 h1:+Wd7dJ//dFPa28rc1hjyy+qzCbXPMR91Fb6F1VGTQHg=
 github.com/leekchan/accounting v1.0.0/go.mod h1:3timm6YPhY3YDaGxl0q3eaflX0eoSx3FXn7ckHe4tO0=
+github.com/lib/pq v1.0.0 h1:X5PMW56eZitiTeO7tKzZxFCSpbFZJtkMMooicw2us9A=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
