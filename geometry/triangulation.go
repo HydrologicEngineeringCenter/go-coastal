@@ -8,12 +8,21 @@ type Tin struct {
 	//Points     []Point
 	//ConvexHull []Point
 	Triangles []Triangle
+	MaxX      float64
+	MaxY      float64
+	MinX      float64
+	MinY      float64
 	//Halfedges  []int
 }
 
 // Triangulate returns a Delaunay triangulation of the provided points.
-func CreateTin(points []Point) (*Tin, error) {
+func CreateTin(points []Point, nodata float64) (*Tin, error) {
 	t := newTriangulator(points)
+	var minx, miny, maxx, maxy float64
+	minx = 180
+	miny = 180
+	maxx = -180
+	maxy = -180
 	err := t.triangulate()
 	if err != nil {
 		//return &Tin{points, t.convexHull(), t.triangles, t.halfedges}, err
@@ -21,13 +30,54 @@ func CreateTin(points []Point) (*Tin, error) {
 	}
 	ts := t.triangles
 	tris := make([]Triangle, 0)
+	count := 0
 	for i := 0; i < len(ts); i += 3 {
 		p0 := points[ts[i+0]]
 		p1 := points[ts[i+1]]
 		p2 := points[ts[i+2]]
-		tris = append(tris, Triangle{P1: p0, P2: p1, P3: p2})
+		if p0.Z != nodata || p1.Z != nodata || p2.Z != nodata {
+			if maxx < p0.X {
+				maxx = p0.X
+			}
+			if maxx < p1.X {
+				maxx = p1.X
+			}
+			if maxx < p2.X {
+				maxx = p2.X
+			}
+			if minx > p0.X {
+				minx = p0.X
+			}
+			if minx > p1.X {
+				minx = p1.X
+			}
+			if minx > p2.X {
+				minx = p2.X
+			}
+			if maxy < p0.Y {
+				maxy = p0.Y
+			}
+			if maxy < p1.Y {
+				maxy = p1.Y
+			}
+			if maxy < p2.Y {
+				maxy = p2.Y
+			}
+			if miny > p0.Y {
+				miny = p0.Y
+			}
+			if miny > p1.Y {
+				miny = p1.Y
+			}
+			if miny > p2.Y {
+				miny = p2.Y
+			}
+			tris = append(tris, Triangle{P1: p0, P2: p1, P3: p2})
+			count++
+		}
 	}
-	return &Tin{tris}, err
+	tris = tris[:count] //count-1?
+	return &Tin{Triangles: tris, MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny}, err
 }
 func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
 	for _, tri := range t.Triangles {

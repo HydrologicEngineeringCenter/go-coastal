@@ -1,8 +1,6 @@
 package hazardprovider
 
 import (
-	"errors"
-
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
 	"github.com/USACE/go-consequences/geography"
 	"github.com/USACE/go-consequences/hazards"
@@ -14,9 +12,9 @@ type csvHazardProvider struct {
 }
 
 //Init creates and produces an unexported csvHazardProvider
-func Init(fp string) csvHazardProvider {
+func Init(fp string, zidx int) csvHazardProvider {
 	// Open the file
-	t, err := process_TIN(fp, int(OneHundred))
+	t, err := process_TIN(fp, zidx)
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +32,13 @@ func (csv csvHazardProvider) ProvideHazard(l geography.Location) (hazards.Hazard
 	return h, nil
 }
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
-	return geography.BBox{}, errors.New("stop asking these questions...")
+	bbox := make([]float64, 4)
+	bbox[0] = csv.ds.MinX //upper left x
+	bbox[1] = csv.ds.MaxY //upper left y
+	bbox[2] = csv.ds.MaxX //lower right x
+	bbox[3] = csv.ds.MinY //lower right y
+
+	return geography.BBox{Bbox: bbox}, nil
 }
 func (csv csvHazardProvider) Close() {
 	//do nothing?
