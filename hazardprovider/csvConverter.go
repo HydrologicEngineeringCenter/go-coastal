@@ -95,15 +95,15 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		if err != nil {
 			panic(err)
 		}
+		if terrain < 0 {
+			zval = zval + terrain //(minus a negative to get value above sea level...)
+		}
 		if zval == 0 {
 			zval = nodata
 		} else {
-			if terrain < 0 {
-				zval = zval + terrain //(minus a negative to get value above sea level...)
-			}
-			zval *= 3.28084
+			zval *= 3.28084 //convert from meters to feet
 		}
-		//convert from meters to feet?
+
 		points = append(points, geometry.Point{X: xval, Y: yval, Z: zval, HasZValue: true})
 		count++
 	}
