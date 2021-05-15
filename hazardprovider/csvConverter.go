@@ -87,6 +87,10 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		if err != nil {
 			panic(err)
 		}
+		terrain, err := strconv.ParseFloat(lines[2], 64)
+		if err != nil {
+			panic(err)
+		}
 		zval, err := strconv.ParseFloat(lines[zidx], 64)
 		if err != nil {
 			panic(err)
@@ -94,6 +98,9 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		if zval == 0 {
 			zval = nodata
 		} else {
+			if terrain < 0 {
+				zval = zval + terrain //(minus a negative to get value above sea level...)
+			}
 			zval *= 3.28084
 		}
 		//convert from meters to feet?
