@@ -3,14 +3,11 @@ package hazardprovider
 import (
 	"bufio"
 	"fmt"
-	"math"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
-	"github.com/dewberry/gdal"
 )
 
 type CoastalFrequency int
@@ -32,6 +29,8 @@ const (
 func (c CoastalFrequency) String() string {
 	return [...]string{"Two", "Five", "Ten", "Twenty", "Fifty", "OneHundred", "TwoHundred", "FiveHundred", "OneThousand", "FiveThousand", "TenThousand"}[c-3]
 }
+
+/*
 func processCSV2Tif(infile string, outfile string, zidx int) {
 	/*
 		This is where the hard part lives...
@@ -45,8 +44,9 @@ func processCSV2Tif(infile string, outfile string, zidx int) {
 		//BE represents Best Estimate, CL90 90% exceedacnce value, SLC0 1996, SLC1 mid future condition, SLC2 high future condition
 		//data organized by state.
 
-	*/
-	//read the csv file line by line and create an array of x values, y values, and z values (specify frequency.)
+*/
+//read the csv file line by line and create an array of x values, y values, and z values (specify frequency.)
+/*
 	f, err := os.Open(infile)
 	defer f.Close()
 	if err != nil {
@@ -176,7 +176,8 @@ func writeTif2(outTifName, crsWKT string, xSize, ySize int, xMin, yMin, xRes, yR
 	fmt.Println("Finished writing", outTifName)
 	return nil
 }
-func process_TIN(fp string, zidx int) {
+*/
+func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 	f, err := os.Open(fp)
 	defer f.Close()
 	if err != nil {
@@ -244,22 +245,20 @@ func process_TIN(fp string, zidx int) {
 		count++
 	}
 	fmt.Printf("read %v lines\n", count)
-	t, err := geometry.Triangulate(points)
-	if err != nil {
-		panic(err)
-	}
+	return geometry.CreateTin(points)
 	/*
-	pts := t.ConvexHull
-	s := "{\"type\": \"FeatureCollection\",\"features\": [{\"type\": \"Feature\",\"geometry\": {\"type\": \"LineString\",\"coordinates\": ["
-	for _, p := range pts {
-		s += "[" + fmt.Sprintf("%g, %g",p.X, p.Y) + "],"
-	}
+		pts := t.ConvexHull
+		s := "{\"type\": \"FeatureCollection\",\"features\": [{\"type\": \"Feature\",\"geometry\": {\"type\": \"LineString\",\"coordinates\": ["
+		for _, p := range pts {
+			s += "[" + fmt.Sprintf("%g, %g",p.X, p.Y) + "],"
+		}
 
-	s = strings.TrimRight(s, ",")
-	s += "]},\"properties\": {\"prop1\": 0.0}}]}"
+		s = strings.TrimRight(s, ",")
+		s += "]},\"properties\": {\"prop1\": 0.0}}]}"
 
-	fmt.Println(s)
+		fmt.Println(s)
+
+		s := strings.TrimRight(fp,".csv")
+		t.Json(s + ".json")
 	*/
-	s := strings.TrimRight(fp,".csv")
-	t.Json(s + ".json")
 }

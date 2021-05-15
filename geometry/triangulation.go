@@ -1,90 +1,45 @@
 package geometry
 
-/*
-type Tin struct {
-	Triangles []Triangle
-	//extent?
-	HasZ bool
-}
-type Extent struct {
-	LowerLeft  Point
-	LowerRight Point
-	UpperLeft  Point
-	UpperRight Point
-}
-func (e Extent) Width() float64{
-	return e.LowerRight.X - e.LowerLeft.X
-}
-func (e Extent) Height() float64{
-	return e.LowerRight.Y - e.UpperRight.Y
-}
-func DelauneyTriangulation(points []Point, minx float64, maxx float64, miny float64, maxy float64) Tin {
-	pointcount := len(points)
-	//
-	ext := Extent{
-		UpperLeft: Point{X:minx,Y:maxy},
-		UpperRight: Point{X:maxx,Y:maxy},
-		LowerLeft: Point{X:minx,Y:miny},
-		LowerRight: Point{X:maxx,Y:miny},
-	}
-	points = append(points, AddOctagonPointsAndTriangles(ext)...)
-	MassPointInsertationStartingIndex := len(points)
-	return Tin{}
-}
-func AddOctagonPointsAndTriangles(ext Extent)[]Point{
-	// add in the points?
-	w := ext.Width()
-	h := ext.Height()
-	delta := h/.5
-	if w>h {
-		delta = w/.5
-	}
-	points := make([]Point, 8)
-	p0 := Point{X: (ext.UpperLeft.X-ext.UpperRight.X)/2, Y: ext.UpperLeft.Y + delta*2}
-	p1 := Point{X: ext.UpperLeft.X + delta*2,Y: ext.LowerRight.Y + delta*2}
-	p2 := Point{X: ext.UpperLeft.X+ delta*2, Y:(ext.UpperLeft.Y - ext.LowerLeft.Y)/2}
-	p3 := Point{X: ext.UpperLeft.X + delta*2,Y:ext.UpperRight.Y - delta*2}
-
-	p4 := Point{X: (ext.UpperLeft.X-ext.UpperRight.X)/2, Y: ext.LowerLeft.Y - delta*2}
-	p5 := Point{X: ext.UpperRight.X - delta*2,Y: ext.UpperRight.Y - delta*2}
-	p6 := Point{X: ext.UpperRight.X - delta*2, Y:(ext.UpperLeft.Y - ext.LowerLeft.Y)/2}
-	p7 := Point{X: ext.UpperRight.X - delta*2,Y:ext.UpperRight.Y - delta*2}
-	points[0] = p0
-	points[1] = p1
-	points[2] = p2
-	points[3] = p3
-	points[4] = p4
-	points[5] = p5
-	points[6] = p6
-	points[7] = p7
-	return points
-}
-func DelauneyInsertPoint(p Point){
-
-}
-*/
-
 import (
-	"fmt"
-	"math"
-	"os"
-	"strings"
+	"errors"
 )
 
-type Triangulation struct {
-	Points     []Point
-	ConvexHull []Point
-	Triangles  []int
-	Halfedges  []int
+type Tin struct {
+	//Points     []Point
+	//ConvexHull []Point
+	Triangles []Triangle
+	//Halfedges  []int
 }
 
 // Triangulate returns a Delaunay triangulation of the provided points.
-func Triangulate(points []Point) (*Triangulation, error) {
+func CreateTin(points []Point) (*Tin, error) {
 	t := newTriangulator(points)
 	err := t.triangulate()
-	return &Triangulation{points, t.convexHull(), t.triangles, t.halfedges}, err
+	if err != nil {
+		//return &Tin{points, t.convexHull(), t.triangles, t.halfedges}, err
+		return &Tin{}, err
+	}
+	ts := t.triangles
+	tris := make([]Triangle, 0)
+	for i := 0; i < len(ts); i += 3 {
+		p0 := points[ts[i+0]]
+		p1 := points[ts[i+1]]
+		p2 := points[ts[i+2]]
+		tris = append(tris, Triangle{P1: p0, P2: p1, P3: p2})
+	}
+	return &Tin{tris}, err
+}
+func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
+	for _, tri := range t.Triangles {
+		v, err := tri.GetValue(x, y)
+		if err == nil {
+			return v, err
+		}
+	}
+	return -9999, errors.New("Point was not in triangles.")
 }
 
+/*
 func (t *Triangulation) area() float64 {
 	var result float64
 	points := t.Points
@@ -157,3 +112,4 @@ func (t *Triangulation) Validate() error {
 
 	return nil
 }
+*/
