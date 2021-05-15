@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
 	"github.com/dewberry/gdal"
 )
 
@@ -120,9 +121,10 @@ func processCSV2Tif(infile string, outfile string, zidx int) {
 	nX := uint(math.Round(math.Abs(maxx-minx) / xRes))
 	nY := uint(math.Round(math.Abs(maxy-miny) / yRes))
 	//create regular grid with inverse distance
+	//gdal.GridInverseDistanceToAPowerOptions{NoDataValue: nodata, Power: .5, Angle: 0, Radius1: .1, Radius2: .1, Smoothing: .5},
 	grid, err := gdal.GridCreate(
-		gdal.GA_InverseDistancetoAPower,
-		gdal.GridInverseDistanceToAPowerOptions{NoDataValue: nodata},
+		gdal.GA_Linear,
+		gdal.GridLinearOptions{NoDataValue: nodata},
 		xvals, yvals, wse,
 		minx, maxx, miny, maxy,
 		nX, nY,
@@ -173,4 +175,91 @@ func writeTif2(outTifName, crsWKT string, xSize, ySize int, xMin, yMin, xRes, yR
 
 	fmt.Println("Finished writing", outTifName)
 	return nil
+}
+func process_TIN(fp string, zidx int) {
+	f, err := os.Open(fp)
+	defer f.Close()
+	if err != nil {
+		panic(err)
+	}
+	scanner := bufio.NewScanner(f)
+	var minx, miny, maxx, maxy float64
+	minx = 180
+	miny = 180
+	maxx = -180
+	maxy = -180
+	nodata := -9999.0
+	xidx := 0
+	yidx := 1
+	firstrow := true
+	//we dont know how big the file will be, so we have to make a guess.
+	dimSize := 0
+	points := make([]geometry.Point, dimSize)
+	count := 0
+	for scanner.Scan() {
+		lines := strings.Split(scanner.Text(), ",")
+		//check if first value is negative to determine lat/lon
+		if firstrow {
+			testval, err := strconv.ParseFloat(lines[0], 64)
+			if err != nil {
+				panic(err)
+			}
+			if testval < 0 {
+				//0 is negative, must be lon
+			} else {
+				yidx = 0
+				xidx = 1
+			}
+			firstrow = false
+		}
+		xval, err := strconv.ParseFloat(lines[xidx], 64)
+		if err != nil {
+			panic(err)
+		}
+		if maxx < xval {
+			maxx = xval
+		}
+		if minx > xval {
+			minx = xval
+		}
+		yval, err := strconv.ParseFloat(lines[yidx], 64)
+		if err != nil {
+			panic(err)
+		}
+		if maxy < yval {
+			maxy = yval
+		}
+		if miny > yval {
+			miny = yval
+		}
+		zval, err := strconv.ParseFloat(lines[zidx], 64)
+		if err != nil {
+			panic(err)
+		}
+		if zval == 0 {
+			zval = nodata
+		}
+		//convert from meters to feet?
+		points = append(points, geometry.Point{X: xval, Y: yval, Z: zval, HasZValue: true})
+		count++
+	}
+	fmt.Printf("read %v lines\n", count)
+	t, err := geometry.Triangulate(points)
+	if err != nil {
+		panic(err)
+	}
+	/*
+	pts := t.ConvexHull
+	s := "{\"type\": \"FeatureCollection\",\"features\": [{\"type\": \"Feature\",\"geometry\": {\"type\": \"LineString\",\"coordinates\": ["
+	for _, p := range pts {
+		s += "[" + fmt.Sprintf("%g, %g",p.X, p.Y) + "],"
+	}
+
+	s = strings.TrimRight(s, ",")
+	s += "]},\"properties\": {\"prop1\": 0.0}}]}"
+
+	fmt.Println(s)
+	*/
+	s := strings.TrimRight(fp,".csv")
+	t.Json(s + ".json")
 }
