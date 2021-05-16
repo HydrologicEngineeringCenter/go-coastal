@@ -50,11 +50,6 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		panic(err)
 	}
 	scanner := bufio.NewScanner(f)
-	var minx, miny, maxx, maxy float64
-	minx = 180
-	miny = 180
-	maxx = -180
-	maxy = -180
 	nodata := 0.0
 	xidx := 0
 	yidx := 1
@@ -109,10 +104,6 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 	}
 	fmt.Printf("read %v lines\n", count)
 	t, err := geometry.CreateTin(points, nodata)
-	t.MaxX = maxx
-	t.MaxY = maxy
-	t.MinX = minx
-	t.MinY = miny
 	return t, err
 	/*
 		pts := t.ConvexHull

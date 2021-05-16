@@ -2,17 +2,17 @@ package geometry
 
 import (
 	"errors"
+
+	"github.com/tidwall/rtree"
 )
 
 type Tin struct {
-	//Points     []Point
-	//ConvexHull []Point
 	Triangles []Triangle
 	MaxX      float64
 	MaxY      float64
 	MinX      float64
 	MinY      float64
-	//Halfedges  []int
+	Tree      rtree.RTree
 }
 
 // Triangulate returns a Delaunay triangulation of the provided points.
@@ -31,62 +31,60 @@ func CreateTin(points []Point, nodata float64) (*Tin, error) {
 	ts := t.triangles
 	tris := make([]Triangle, 0)
 	count := 0
+	var tr rtree.RTree
 	for i := 0; i < len(ts); i += 3 {
 		p0 := points[ts[i+0]]
 		p1 := points[ts[i+1]]
 		p2 := points[ts[i+2]]
 		if p0.Z != nodata || p1.Z != nodata || p2.Z != nodata {
-			if maxx < p0.X {
-				maxx = p0.X
+			t := CreateTriangle(p0, p1, p2)
+			e := t.Extent()
+			if maxx < e.UpperRight.X {
+				maxx = e.UpperRight.X
 			}
-			if maxx < p1.X {
-				maxx = p1.X
+			if minx > e.LowerLeft.X {
+				minx = e.LowerLeft.X
 			}
-			if maxx < p2.X {
-				maxx = p2.X
+			if maxy < e.UpperRight.Y {
+				maxy = e.UpperRight.Y
 			}
-			if minx > p0.X {
-				minx = p0.X
+			if miny > e.LowerLeft.Y {
+				miny = e.LowerLeft.Y
 			}
-			if minx > p1.X {
-				minx = p1.X
-			}
-			if minx > p2.X {
-				minx = p2.X
-			}
-			if maxy < p0.Y {
-				maxy = p0.Y
-			}
-			if maxy < p1.Y {
-				maxy = p1.Y
-			}
-			if maxy < p2.Y {
-				maxy = p2.Y
-			}
-			if miny > p0.Y {
-				miny = p0.Y
-			}
-			if miny > p1.Y {
-				miny = p1.Y
-			}
-			if miny > p2.Y {
-				miny = p2.Y
-			}
-			tris = append(tris, Triangle{P1: p0, P2: p1, P3: p2})
+			tris = append(tris, t)
+			tr.Insert(e.LowerLeft.ToXY(), e.UpperRight.ToXY(), t)
 			count++
 		}
 	}
 	tris = tris[:count] //count-1?
-	return &Tin{Triangles: tris, MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny}, err
+	return &Tin{Triangles: tris, MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr}, err
 }
 func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
-	for _, tri := range t.Triangles {
-		v, err := tri.GetValue(x, y)
-		if err == nil {
-			return v, err
-		}
+	var v float64
+	nodata := -9999.0
+	var err error
+	v = nodata
+	t.Tree.Search([2]float64{x, y}, [2]float64{x, y},
+		func(min, max [2]float64, value interface{}) bool {
+			tri, ok := value.(Triangle)
+			if ok {
+				v, err = tri.GetValue(x, y)
+				if err == nil {
+					return false
+				} else {
+					return true
+				}
+			}
+			return true
+		},
+	)
+	if v == nodata {
+		return nodata, errors.New("Point was not in triangles.")
 	}
-	return -9999, errors.New("Point was not in triangles.")
+	if err == nil {
+		return v, err
+	}
+	return nodata, errors.New("Point was not in triangles.")
 }
 
 /*
