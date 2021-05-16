@@ -30,6 +30,12 @@ func Init(fp string, zidx int) *csvHazardProvider {
 func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
 	h := hazards.CoastalEvent{}
 	csv.queryCount++
+	if csv.queryCount%100000 == 0 {
+		n := time.Since(csv.computeStart)
+		fmt.Print("Compute Time: ")
+		fmt.Println(n)
+		fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))
+	}
 	v, err := csv.ds.ComputeValue(l.X, l.Y)
 	if err != nil {
 		h.SetDepth(-9999.0)
@@ -38,6 +44,7 @@ func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.Hazar
 	h.SetDepth(v)
 	h.SetSalinity(true)
 	csv.actualComputedStructures++
+
 	return h, nil
 }
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
@@ -51,6 +58,7 @@ func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 func (csv *csvHazardProvider) Close() {
 	//do nothing?
 	n := time.Since(csv.computeStart)
+	fmt.Print("Compute Complete")
 	fmt.Print("Compute Time was: ")
 	fmt.Println(n)
 	fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))

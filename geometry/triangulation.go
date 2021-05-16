@@ -2,6 +2,7 @@ package geometry
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/tidwall/rtree"
 )
@@ -23,6 +24,7 @@ func CreateTin(points []Point, nodata float64) (*Tin, error) {
 	miny = 180
 	maxx = -180
 	maxy = -180
+	fmt.Println("Triangulating...")
 	err := t.triangulate()
 	if err != nil {
 		//return &Tin{points, t.convexHull(), t.triangles, t.halfedges}, err
@@ -57,6 +59,7 @@ func CreateTin(points []Point, nodata float64) (*Tin, error) {
 		}
 	}
 	tris = tris[:count] //count-1?
+	fmt.Println(fmt.Sprintf("Found %v triangles.", count))
 	return &Tin{Triangles: tris, MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr}, err
 }
 func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
