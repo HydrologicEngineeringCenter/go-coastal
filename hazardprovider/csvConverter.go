@@ -102,7 +102,7 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		points = append(points, geometry.Point{X: xval, Y: yval, Z: zval, HasZValue: true})
 		count++
 	}
-	fmt.Printf("read %v lines\n", count)
+	fmt.Printf("read %v lines from %v\n", count, fp)
 	t, err := geometry.CreateTin(points, nodata)
 	return t, err
 	/*

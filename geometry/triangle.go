@@ -3,14 +3,14 @@ package geometry
 import "errors"
 
 type Triangle struct {
-	p1     Point
-	p2     Point
-	p3     Point
+	p1     *Point
+	p2     *Point
+	p3     *Point
 	hasZ   bool
 	extent Extent
 }
 
-func CreateTriangle(a Point, b Point, c Point) Triangle {
+func CreateTriangle(a *Point, b *Point, c *Point) Triangle {
 	z := a.HasZValue && b.HasZValue && c.HasZValue
 	var minx, miny, maxx, maxy float64
 	minx = 180

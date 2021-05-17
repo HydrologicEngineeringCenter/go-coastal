@@ -31,13 +31,13 @@ func CreateTin(points []Point, nodata float64) (*Tin, error) {
 		return &Tin{}, err
 	}
 	ts := t.triangles
-	tris := make([]Triangle, 0)
+	//tris := make([]Triangle, 0)
 	count := 0
 	var tr rtree.RTree
 	for i := 0; i < len(ts); i += 3 {
-		p0 := points[ts[i+0]]
-		p1 := points[ts[i+1]]
-		p2 := points[ts[i+2]]
+		p0 := &points[ts[i+0]]
+		p1 := &points[ts[i+1]]
+		p2 := &points[ts[i+2]]
 		if p0.Z != nodata || p1.Z != nodata || p2.Z != nodata {
 			t := CreateTriangle(p0, p1, p2)
 			e := t.Extent()
@@ -53,14 +53,14 @@ func CreateTin(points []Point, nodata float64) (*Tin, error) {
 			if miny > e.LowerLeft.Y {
 				miny = e.LowerLeft.Y
 			}
-			tris = append(tris, t)
+			//tris = append(tris, t)
 			tr.Insert(e.LowerLeft.ToXY(), e.UpperRight.ToXY(), t)
 			count++
 		}
 	}
-	tris = tris[:count] //count-1?
+	//tris = tris[:count] //count-1?
 	fmt.Println(fmt.Sprintf("Found %v triangles.", count))
-	return &Tin{Triangles: tris, MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr}, err
+	return &Tin{MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr}, err
 }
 func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
 	var v float64

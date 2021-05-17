@@ -13,11 +13,11 @@ type triangulator struct {
 	center           Point
 	triangles        []int
 	//triangleList	[]Triangle
-	halfedges        []int
-	trianglesLen     int
+	halfedges    []int
+	trianglesLen int
 	//trianglesListLen     int
-	hull             *node
-	hash             []*node
+	hull *node
+	hash []*node
 }
 
 func newTriangulator(points []Point) *triangulator {
@@ -82,7 +82,7 @@ func (tri *triangulator) triangulate() error {
 	var i0, i1, i2 int
 
 	// pick a seed point close to midpoint
-	m := Point{X:(x0 + x1) / 2,Y: (y0 + y1) / 2}
+	m := Point{X: (x0 + x1) / 2, Y: (y0 + y1) / 2}
 	minDist := infinity
 	for i, p := range points {
 		d := p.squaredDistance(m)
@@ -163,7 +163,7 @@ func (tri *triangulator) triangulate() error {
 
 	tri.addTriangle(i0, i1, i2, -1, -1, -1)
 
-	pp := Point{X: infinity,Y: infinity}
+	pp := Point{X: infinity, Y: infinity}
 	for k := 0; k < n; k++ {
 		i := tri.ids[k]
 		p := points[i]
