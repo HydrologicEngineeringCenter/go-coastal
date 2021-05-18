@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
+	"github.com/furstenheim/ConcaveHull"
 )
 
 type CoastalFrequency int
@@ -58,6 +59,7 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 	dimSize := 0
 	points := make([]geometry.Point, dimSize)
 	count := 0
+	ps := make([]float64, dimSize)
 	for scanner.Scan() {
 		lines := strings.Split(scanner.Text(), ",")
 		//check if first value is negative to determine lat/lon
@@ -78,10 +80,12 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		if err != nil {
 			panic(err)
 		}
+		ps = append(ps, xval)
 		yval, err := strconv.ParseFloat(lines[yidx], 64)
 		if err != nil {
 			panic(err)
 		}
+		ps = append(ps, yval)
 		terrain, err := strconv.ParseFloat(lines[2], 64)
 		if err != nil {
 			panic(err)
@@ -103,7 +107,18 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		count++
 	}
 	fmt.Printf("read %v lines from %v\n", count, fp)
-	t, err := geometry.CreateTin(points, nodata)
+	fmt.Println("Creating Concave Hull...")
+	flathull := ConcaveHull.Compute(ConcaveHull.FlatPoints(ps))
+	ptcount := len(flathull) / 2
+	hull := make([]geometry.Point, ptcount+1)
+	index := 0
+	for i := 0; i < len(flathull); i += 2 {
+		hull[index] = geometry.Point{X: flathull[i], Y: flathull[i+1], Z: 0, HasZValue: false}
+		index++
+	}
+	hull[index] = geometry.Point{X: flathull[0], Y: flathull[1], Z: 0, HasZValue: false}
+	p := geometry.CreatePolygon(hull)
+	t, err := geometry.CreateTin(points, nodata, p)
 	return t, err
 	/*
 		pts := t.ConvexHull

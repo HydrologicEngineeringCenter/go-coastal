@@ -6,6 +6,7 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
 	"github.com/USACE/go-consequences/geography"
+	"github.com/USACE/go-consequences/hazardproviders"
 	"github.com/USACE/go-consequences/hazards"
 )
 
@@ -30,22 +31,28 @@ func Init(fp string, zidx int) *csvHazardProvider {
 func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
 	h := hazards.CoastalEvent{}
 	csv.queryCount++
+	//check if point is in the hull polygon.
+	p := geometry.Point{X: l.X, Y: l.Y}
 	if csv.queryCount%100000 == 0 {
 		n := time.Since(csv.computeStart)
 		fmt.Print("Compute Time: ")
 		fmt.Println(n)
 		fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))
 	}
-	v, err := csv.ds.ComputeValue(l.X, l.Y)
-	if err != nil {
-		h.SetDepth(-9999.0)
-		return h, err
+	if csv.ds.Hull.Contains(p) {
+		v, err := csv.ds.ComputeValue(l.X, l.Y)
+		if err != nil {
+			h.SetDepth(-9999.0)
+			return h, err
+		}
+		h.SetDepth(v)
+		h.SetSalinity(true)
+		csv.actualComputedStructures++
+		return h, nil
 	}
-	h.SetDepth(v)
-	h.SetSalinity(true)
-	csv.actualComputedStructures++
-
-	return h, nil
+	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
+	h.SetDepth(-9999.0)
+	return h, notIn
 }
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox := make([]float64, 4)

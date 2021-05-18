@@ -12,12 +12,10 @@ type triangulator struct {
 	ids              []int
 	center           Point
 	triangles        []int
-	//triangleList	[]Triangle
-	halfedges    []int
-	trianglesLen int
-	//trianglesListLen     int
-	hull *node
-	hash []*node
+	halfedges        []int
+	trianglesLen     int
+	hull             *node
+	hash             []*node
 }
 
 func newTriangulator(points []Point) *triangulator {
