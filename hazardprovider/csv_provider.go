@@ -19,14 +19,17 @@ type csvHazardProvider struct {
 }
 
 //Init creates and produces an unexported csvHazardProvider
-func Init(fp string, zidx int) *csvHazardProvider {
+func Init(fp string) *csvHazardProvider {
 	// Open the file
-	t, err := process_TIN(fp, zidx)
+	t, err := process_TIN(fp)
 	if err != nil {
 		panic(err)
 	}
 	c := time.Now()
 	return &csvHazardProvider{ds: t, computeStart: c}
+}
+func (csv *csvHazardProvider) SetFrequency(zidx int) {
+	csv.ds.SetFrequency(zidx)
 }
 func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
 	h := hazards.CoastalEvent{}
@@ -53,6 +56,35 @@ func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.Hazar
 	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
 	h.SetDepth(-9999.0)
 	return h, notIn
+}
+func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.HazardEvent, error) {
+	var hs []hazards.HazardEvent
+	csv.queryCount++
+	//check if point is in the hull polygon.
+	p := geometry.Point{X: l.X, Y: l.Y}
+	if csv.queryCount%100000 == 0 {
+		n := time.Since(csv.computeStart)
+		fmt.Print("Compute Time: ")
+		fmt.Println(n)
+		fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))
+	}
+	if csv.ds.Hull.Contains(p) {
+		v, err := csv.ds.ComputeValues(l.X, l.Y)
+		if err != nil {
+			return hs, err
+		}
+		lenv := len(v)
+		for i := 0; i < lenv; i++ {
+			h := hazards.CoastalEvent{}
+			h.SetDepth(v[i])
+			h.SetSalinity(true)
+			hs = append(hs, h)
+		}
+		csv.actualComputedStructures++
+		return hs, nil
+	}
+	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
+	return hs, notIn
 }
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox := make([]float64, 4)

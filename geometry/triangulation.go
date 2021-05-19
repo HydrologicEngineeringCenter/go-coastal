@@ -18,7 +18,7 @@ type Tin struct {
 }
 
 // Triangulate returns a Delaunay triangulation of the provided points.
-func CreateTin(points []PointZ, nodata float64, hull Polygon, zidx int) (*Tin, error) {
+func CreateTin(points []PointZ, nodata float64, hull Polygon) (*Tin, error) {
 	t := newTriangulator(points)
 	var minx, miny, maxx, maxy float64
 	minx = 180
@@ -60,6 +60,9 @@ func CreateTin(points []PointZ, nodata float64, hull Polygon, zidx int) (*Tin, e
 	fmt.Println(fmt.Sprintf("Found %v triangles.", count))
 	return &Tin{MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr, Hull: hull}, err
 }
+func (t *Tin) SetFrequency(zval int) {
+	t.zidx = zval
+}
 func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
 	var v float64
 	nodata := -9999.0
@@ -86,4 +89,33 @@ func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
 		return v, err
 	}
 	return nodata, errors.New("Point was not in triangles.")
+}
+func (t *Tin) ComputeValues(x float64, y float64) ([]float64, error) {
+	var vs []float64
+	nodata := -9999.0
+	var err error
+	t.Tree.Search([2]float64{x, y}, [2]float64{x, y},
+		func(min, max [2]float64, value interface{}) bool {
+			tri, ok := value.(Triangle)
+			if ok {
+				vs, err = tri.GetValues(x, y)
+				if err == nil {
+					return false
+				} else {
+					return true
+				}
+			}
+			return true
+		},
+	)
+	if err != nil {
+		//err was not set back to nil, point must not be in any triangle.
+		return vs, err
+	}
+	for i, v := range vs {
+		if v == 0 {
+			vs[i] = nodata
+		}
+	}
+	return vs, err
 }

@@ -27,6 +27,20 @@ const (
 	TenThousand  CoastalFrequency = 13
 )
 
+var coastalFrequencies = []CoastalFrequency{
+	Two,
+	Five,
+	Ten,
+	Twenty,
+	Fifty,
+	OneHundred,
+	TwoHundred,
+	FiveHundred,
+	OneThousand,
+	FiveThousand,
+	TenThousand,
+}
+
 func (c CoastalFrequency) String() string {
 	return [...]string{"Two", "Five", "Ten", "Twenty", "Fifty", "OneHundred", "TwoHundred", "FiveHundred", "OneThousand", "FiveThousand", "TenThousand"}[c-3]
 }
@@ -44,7 +58,7 @@ func (c CoastalFrequency) String() string {
 	//data organized by state.
 */
 
-func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
+func process_TIN(fp string) (*geometry.Tin, error) {
 	f, err := os.Open(fp)
 	defer f.Close()
 	if err != nil {
@@ -90,20 +104,25 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		if err != nil {
 			panic(err)
 		}
-		zval, err := strconv.ParseFloat(lines[zidx], 64) //need to read all values and load into an array now.
-		if err != nil {
-			panic(err)
-		}
-		if terrain < 0 {
-			zval = zval + terrain //(minus a negative to get value above sea level...)
-		}
-		if zval == 0 {
-			zval = nodata
-		} else {
-			zval *= 3.28084 //convert from meters to feet
+		//loop over z values
+		zvals := make([]float64, len(coastalFrequencies))
+		for i, zconst := range coastalFrequencies {
+			zval, err := strconv.ParseFloat(lines[int(zconst)], 64) //need to read all values and load into an array now.
+			if err != nil {
+				panic(err)
+			}
+			if terrain < 0 {
+				zval = zval + terrain //(minus a negative to get value above sea level...)
+			}
+			if zval == 0 {
+				zval = nodata
+			} else {
+				zval *= 3.28084 //convert from meters to feet
+			}
+			zvals[i] = zval
 		}
 		p := geometry.Point{X: xval, Y: yval}
-		points = append(points, geometry.PointZ{Point: &p, Z: []float64{zval}})
+		points = append(points, geometry.PointZ{Point: &p, Z: zvals})
 		count++
 	}
 	fmt.Printf("read %v lines from %v\n", count, fp)
@@ -118,7 +137,7 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 	}
 	hull[index] = geometry.Point{X: flathull[0], Y: flathull[1]}
 	p := geometry.CreatePolygon(hull)
-	t, err := geometry.CreateTin(points, nodata, p, 0) //because i only have one value right now!
+	t, err := geometry.CreateTin(points, nodata, p)
 	return t, err
 	/*
 		pts := t.ConvexHull

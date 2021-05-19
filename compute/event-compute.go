@@ -21,7 +21,8 @@ func Event(hazardfp string, inventoryfp string, frequency int) {
 	outfp += "_consequences.json"
 	sw := consequences.InitGeoJsonResultsWriterFromFile(outfp)
 	defer sw.Close()
-	hp := hazardprovider.Init(hazardfp, frequency) //pass in frequency?
+	hp := hazardprovider.Init(hazardfp)
+	hp.SetFrequency(frequency - int(hazardprovider.Two)) //offset to zero based position.
 	defer hp.Close()
 	nsp := structureprovider.InitGPK(inventoryfp, "nsi")
 	fmt.Println("Getting bbox")
@@ -43,5 +44,4 @@ func Event(hazardfp string, inventoryfp string, frequency int) {
 			}
 		}
 	})
-
 }
