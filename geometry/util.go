@@ -1,4 +1,5 @@
 package geometry
+
 import "math"
 
 var eps = math.Nextafter(1, 2) - 1
@@ -15,11 +16,11 @@ func pseudoAngle(dx, dy float64) float64 {
 	return math.Max(0, math.Min(1-eps, p))
 }
 
-func area(a, b, c Point) float64 {
+func area(a, b, c PointZ) float64 {
 	return (b.Y-a.Y)*(c.X-b.X) - (b.X-a.X)*(c.Y-b.Y)
 }
 
-func inCircle(a, b, c, p Point) bool {
+func inCircle(a, b, c, p PointZ) bool {
 	dx := a.X - p.X
 	dy := a.Y - p.Y
 	ex := b.X - p.X
@@ -34,7 +35,7 @@ func inCircle(a, b, c, p Point) bool {
 	return dx*(ey*cp-bp*fy)-dy*(ex*cp-bp*fx)+ap*(ex*fy-ey*fx) < 0
 }
 
-func circumradius(a, b, c Point) float64 {
+func circumradius(a, b, c PointZ) float64 {
 	dx := b.X - a.X
 	dy := b.Y - a.Y
 	ex := c.X - a.X
@@ -56,7 +57,7 @@ func circumradius(a, b, c Point) float64 {
 	return r
 }
 
-func circumcenter(a, b, c Point) Point {
+func circumcenter(a, b, c PointZ) PointZ {
 	dx := b.X - a.X
 	dy := b.Y - a.Y
 	ex := c.X - a.X
@@ -69,7 +70,7 @@ func circumcenter(a, b, c Point) Point {
 	x := a.X + (ey*bl-dy*cl)*0.5/d
 	y := a.Y + (dx*cl-ex*bl)*0.5/d
 
-	return Point{X:x,Y: y}
+	return PointZ{Point: &Point{X: x, Y: y}, Z: []float64{0}}
 }
 
 func polygonArea(points []Point) float64 {

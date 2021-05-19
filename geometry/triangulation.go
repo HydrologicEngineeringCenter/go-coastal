@@ -14,10 +14,11 @@ type Tin struct {
 	MinY float64
 	Tree rtree.RTree
 	Hull Polygon
+	zidx int
 }
 
 // Triangulate returns a Delaunay triangulation of the provided points.
-func CreateTin(points []Point, nodata float64, hull Polygon) (*Tin, error) {
+func CreateTin(points []PointZ, nodata float64, hull Polygon, zidx int) (*Tin, error) {
 	t := newTriangulator(points)
 	var minx, miny, maxx, maxy float64
 	minx = 180
@@ -36,7 +37,8 @@ func CreateTin(points []Point, nodata float64, hull Polygon) (*Tin, error) {
 		p0 := &points[ts[i+0]]
 		p1 := &points[ts[i+1]]
 		p2 := &points[ts[i+2]]
-		if p0.Z != nodata || p1.Z != nodata || p2.Z != nodata {
+		lenz := len(p0.Z) - 1
+		if p0.Z[lenz] != nodata || p1.Z[lenz] != nodata || p2.Z[lenz] != nodata {
 			t := CreateTriangle(p0, p1, p2)
 			e := t.Extent()
 			if maxx < e.UpperRight.X {
@@ -67,7 +69,7 @@ func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
 		func(min, max [2]float64, value interface{}) bool {
 			tri, ok := value.(Triangle)
 			if ok {
-				v, err = tri.GetValue(x, y)
+				v, err = tri.GetValue(x, y, t.zidx)
 				if err == nil {
 					return false
 				} else {

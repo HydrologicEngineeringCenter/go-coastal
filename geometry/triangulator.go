@@ -7,10 +7,10 @@ import (
 )
 
 type triangulator struct {
-	points           []Point
+	points           []PointZ
 	squaredDistances []float64
 	ids              []int
-	center           Point
+	center           PointZ
 	triangles        []int
 	halfedges        []int
 	trianglesLen     int
@@ -18,7 +18,7 @@ type triangulator struct {
 	hash             []*node
 }
 
-func newTriangulator(points []Point) *triangulator {
+func newTriangulator(points []PointZ) *triangulator {
 	return &triangulator{points: points}
 }
 
@@ -80,7 +80,7 @@ func (tri *triangulator) triangulate() error {
 	var i0, i1, i2 int
 
 	// pick a seed point close to midpoint
-	m := Point{X: (x0 + x1) / 2, Y: (y0 + y1) / 2}
+	m := PointZ{Point: &Point{X: (x0 + x1) / 2, Y: (y0 + y1) / 2}, Z: []float64{0}}
 	minDist := infinity
 	for i, p := range points {
 		d := p.squaredDistance(m)
@@ -161,7 +161,7 @@ func (tri *triangulator) triangulate() error {
 
 	tri.addTriangle(i0, i1, i2, -1, -1, -1)
 
-	pp := Point{X: infinity, Y: infinity}
+	pp := PointZ{Point: &Point{X: infinity, Y: infinity}, Z: []float64{0}}
 	for k := 0; k < n; k++ {
 		i := tri.ids[k]
 		p := points[i]
@@ -247,7 +247,7 @@ func (tri *triangulator) triangulate() error {
 	return nil
 }
 
-func (t *triangulator) hashKey(point Point) int {
+func (t *triangulator) hashKey(point PointZ) int {
 	d := point.sub(t.center)
 	return int(pseudoAngle(d.X, d.Y) * float64(len(t.hash)))
 }
@@ -352,7 +352,7 @@ func (t *triangulator) convexHull() []Point {
 	var result []Point
 	e := t.hull
 	for e != nil {
-		result = append(result, t.points[e.i])
+		result = append(result, *t.points[e.i].Point)
 		e = e.prev
 		if e == t.hull {
 			break

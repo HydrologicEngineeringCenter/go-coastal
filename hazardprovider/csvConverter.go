@@ -57,7 +57,7 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 	firstrow := true
 	//we dont know how big the file will be, so we have to make a guess.
 	dimSize := 0
-	points := make([]geometry.Point, dimSize)
+	points := make([]geometry.PointZ, dimSize)
 	count := 0
 	ps := make([]float64, dimSize)
 	for scanner.Scan() {
@@ -90,7 +90,7 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		if err != nil {
 			panic(err)
 		}
-		zval, err := strconv.ParseFloat(lines[zidx], 64)
+		zval, err := strconv.ParseFloat(lines[zidx], 64) //need to read all values and load into an array now.
 		if err != nil {
 			panic(err)
 		}
@@ -102,8 +102,8 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 		} else {
 			zval *= 3.28084 //convert from meters to feet
 		}
-
-		points = append(points, geometry.Point{X: xval, Y: yval, Z: zval, HasZValue: true})
+		p := geometry.Point{X: xval, Y: yval}
+		points = append(points, geometry.PointZ{Point: &p, Z: []float64{zval}})
 		count++
 	}
 	fmt.Printf("read %v lines from %v\n", count, fp)
@@ -113,12 +113,12 @@ func process_TIN(fp string, zidx int) (*geometry.Tin, error) {
 	hull := make([]geometry.Point, ptcount+1)
 	index := 0
 	for i := 0; i < len(flathull); i += 2 {
-		hull[index] = geometry.Point{X: flathull[i], Y: flathull[i+1], Z: 0, HasZValue: false}
+		hull[index] = geometry.Point{X: flathull[i], Y: flathull[i+1]}
 		index++
 	}
-	hull[index] = geometry.Point{X: flathull[0], Y: flathull[1], Z: 0, HasZValue: false}
+	hull[index] = geometry.Point{X: flathull[0], Y: flathull[1]}
 	p := geometry.CreatePolygon(hull)
-	t, err := geometry.CreateTin(points, nodata, p)
+	t, err := geometry.CreateTin(points, nodata, p, 0) //because i only have one value right now!
 	return t, err
 	/*
 		pts := t.ConvexHull
