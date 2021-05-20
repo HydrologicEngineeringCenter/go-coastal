@@ -8,12 +8,12 @@ import (
 
 func Test_Event(t *testing.T) {
 	f := hazardprovider.OneHundred
-	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv" //pass in frequency
+	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
-	Event(hp, sp, int(f))
+	Event(hp, sp, int(f)) //pass in frequency
 }
 func Test_EAD(t *testing.T) {
-	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv" //pass in frequency
+	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
 	ExpectedAnnualDamages(hp, sp)
 }

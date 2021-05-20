@@ -71,7 +71,12 @@ func ExpectedAnnualDamages(hazardfp string, inventoryfp string) {
 			sead := compute.ComputeSpecialEAD(sdams, frequencies)
 			ret.Result[6] = sead
 			ret.Result[7] = cead
-			sw.Write(ret)
+			if ret.Result[1] != 0.0 {
+				if sead != 0 || cead != 0 {
+					sw.Write(ret)
+				}
+			}
+
 		}
 	})
 }
