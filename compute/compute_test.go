@@ -17,3 +17,16 @@ func Test_EAD(t *testing.T) {
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
 	ExpectedAnnualDamages(hp, sp)
 }
+func Test_EADGpk(t *testing.T) {
+	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
+	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
+	ExpectedAnnualDamagesGPK(hp, sp)
+}
+
+/*
+func Test_EADGpk_parallel(t *testing.T) {
+	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
+	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
+	ExpectedAnnualDamagesGPK_FIPS(hp, sp, "12")
+}
+*/
