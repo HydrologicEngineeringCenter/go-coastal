@@ -1,20 +1,21 @@
 package main
 
 import (
-	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
-	"github.com/USACE/go-consequences/compute"
-	"github.com/USACE/go-consequences/consequences"
+	"fmt"
+	"os"
 
-	"github.com/USACE/go-consequences/structureprovider"
+	"github.com/HydrologicEngineeringCenter/go-coastal/compute"
 )
 
 func main() {
-	nsp := structureprovider.InitNSISP()
-	f := hazardprovider.OneHundred
-	hp := hazardprovider.Init("/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv")
-	hp.SetFrequency(int(f)) //pass in frequency?
-	sw := consequences.InitGeoJsonResultsWriterFromFile("/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a_consequences.json")
-	//fmt.Println("FIPS Code is " + "12") //for florida
-	compute.StreamAbstract(hp, nsp, sw)
+	argsWithoutProg := os.Args[1:]
+	if len(argsWithoutProg) != 2 {
+		fmt.Println("Expected two arguments, the filepath to the csv input and the file path to the geopackage input")
+	} else {
+		hfp := argsWithoutProg[0]
+		sfp := argsWithoutProg[1]
+		fmt.Println(fmt.Sprintf("Computing EAD for %v using an iventory at path %v", hfp, sfp))
+		compute.ExpectedAnnualDamagesGPK(hfp, sfp)
+	}
 
 }
