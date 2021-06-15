@@ -8,7 +8,6 @@ import (
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
 	"github.com/USACE/go-consequences/consequences"
 	"github.com/USACE/go-consequences/geography"
-	"github.com/USACE/go-consequences/hazards"
 	"github.com/USACE/go-consequences/structureprovider"
 )
 
@@ -37,10 +36,9 @@ func Event(hazardfp string, inventoryfp string, frequency int) {
 		d, err2 := hp.ProvideHazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
 		//compute damages based on hazard being able to provide depth
 		if err2 == nil {
-			if d.Has(hazards.Depth) {
-				if d.Depth() > 0.0 && d.Depth() < 9999.0 {
-					sw.Write(f.Compute(d))
-				}
+			r, err := f.Compute(d)
+			if err == nil {
+				sw.Write(r)
 			}
 		}
 	})

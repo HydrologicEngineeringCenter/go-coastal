@@ -9,7 +9,6 @@ import (
 	"github.com/USACE/go-consequences/compute"
 	"github.com/USACE/go-consequences/consequences"
 	"github.com/USACE/go-consequences/geography"
-	"github.com/USACE/go-consequences/hazards"
 	"github.com/USACE/go-consequences/structureprovider"
 )
 
@@ -46,24 +45,21 @@ func ExpectedAnnualDamages(hazardfp string, inventoryfp string) {
 			sdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 			lends := len(ds)
 			for i, d := range ds {
-				if d.Has(hazards.Depth) {
-
-					if d.Depth() > 0.0 && d.Depth() < 9999.0 {
-						r := f.Compute(d)
-						if i == lends-1 {
-							ret.Result[0] = r.Result[0]
-							ret.Result[1] = r.Result[1]
-							ret.Result[2] = r.Result[2]
-							ret.Result[4] = r.Result[4]
-							ret.Result[5] = r.Result[5]
-							ret.Result[8] = r.Result[8]
-							ret.Result[9] = r.Result[9]
-							ret.Result[10] = r.Result[10]
-							ret.Result[11] = r.Result[11]
-						}
-						sdams[i] = r.Result[6].(float64)
-						cdams[i] = r.Result[7].(float64)
+				r, err := f.Compute(d)
+				if err == nil {
+					if i == lends-1 { //on the last one get the attributes.
+						ret.Result[0] = r.Result[0]
+						ret.Result[1] = r.Result[1]
+						ret.Result[2] = r.Result[2]
+						ret.Result[4] = r.Result[4]
+						ret.Result[5] = r.Result[5]
+						ret.Result[8] = r.Result[8]
+						ret.Result[9] = r.Result[9]
+						ret.Result[10] = r.Result[10]
+						ret.Result[11] = r.Result[11]
 					}
+					sdams[i] = r.Result[6].(float64)
+					cdams[i] = r.Result[7].(float64)
 				}
 			}
 			//compute EAD
@@ -114,24 +110,21 @@ func ExpectedAnnualDamagesGPK(hazardfp string, inventoryfp string) {
 			sdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 			lends := len(ds)
 			for i, d := range ds {
-				if d.Has(hazards.Depth) {
-
-					if d.Depth() > 0.0 && d.Depth() < 9999.0 {
-						r := f.Compute(d)
-						if i == lends-1 {
-							ret.Result[0] = r.Result[0]
-							ret.Result[1] = r.Result[1]
-							ret.Result[2] = r.Result[2]
-							ret.Result[4] = r.Result[4]
-							ret.Result[5] = r.Result[5]
-							ret.Result[8] = r.Result[8]
-							ret.Result[9] = r.Result[9]
-							ret.Result[10] = r.Result[10]
-							ret.Result[11] = r.Result[11]
-						}
-						sdams[i] = r.Result[6].(float64)
-						cdams[i] = r.Result[7].(float64)
+				r, err := f.Compute(d)
+				if err == nil {
+					if i == lends-1 { //on the last one get the attributes.
+						ret.Result[0] = r.Result[0]
+						ret.Result[1] = r.Result[1]
+						ret.Result[2] = r.Result[2]
+						ret.Result[4] = r.Result[4]
+						ret.Result[5] = r.Result[5]
+						ret.Result[8] = r.Result[8]
+						ret.Result[9] = r.Result[9]
+						ret.Result[10] = r.Result[10]
+						ret.Result[11] = r.Result[11]
 					}
+					sdams[i] = r.Result[6].(float64)
+					cdams[i] = r.Result[7].(float64)
 				}
 			}
 			//compute EAD
