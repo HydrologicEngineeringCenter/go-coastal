@@ -9,6 +9,7 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
 	"github.com/furstenheim/ConcaveHull"
+	"github.com/tidwall/rtree"
 )
 
 type CoastalFrequency int
@@ -154,4 +155,148 @@ func process_TIN(fp string) (*geometry.Tin, error) {
 		s := strings.TrimRight(fp,".csv")
 		t.Json(s + ".json")
 	*/
+}
+func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
+	grdf, err := os.Open(grdfp)
+	if err != nil {
+		panic(err)
+	}
+	defer grdf.Close()
+
+	scanner := bufio.NewScanner(grdf)
+	//we dont know how big the file will be, so we have to make a guess.
+	scanner.Scan() // burn the header
+	scanner.Scan() //count of triangles and points
+	row2 := scanner.Text()
+	vals := strings.Split(row2, "  ") //not sure this will always work correctly
+	dimNSize, _ := strconv.ParseInt(vals[1], 10, 64)
+	dimTSize, _ := strconv.ParseInt(vals[0], 10, 64)
+	nodes := make(map[int64]geometry.PointZ)
+	triangles := make(map[int64]geometry.Triangle)
+	var triangleCounter int64
+	var pointCounter int64
+	triangleCounter = 0
+	pointCounter = 0
+	var minx, miny, maxx, maxy float64
+	minx = 180
+	miny = 180
+	maxx = -180
+	maxy = -180
+	var tr rtree.RTree
+	ps := make([]float64, 0)
+	for scanner.Scan() {
+		if pointCounter < dimNSize { //points come first.
+			if pointCounter == 0 {
+				fmt.Println("reading nodes")
+			}
+			pointCounter += 1
+			line := strings.Split(scanner.Text(), " ") //is there a way to group spaces?
+			//nodeid|X|Y|Z
+			var nodeid int64
+			nodeid = 0
+			xval := 0.0
+			yval := 0.0
+			zval := 0.0
+			valcount := 0
+			for _, v := range line {
+				if v != "" {
+					valcount += 1
+					switch valcount {
+					case 1:
+						nodeid, _ = strconv.ParseInt(v, 10, 32)
+					case 2:
+						xval, _ = strconv.ParseFloat(v, 64)
+					case 3:
+						yval, _ = strconv.ParseFloat(v, 64)
+					case 4:
+						zval, _ = strconv.ParseFloat(v, 64)
+					}
+				}
+			}
+			//replace with depth values?
+			zvals := []float64{zval}
+			nodes[nodeid] = geometry.PointZ{Point: &geometry.Point{X: xval, Y: yval}, Z: zvals}
+			if xval > maxx {
+				maxx = xval
+			} else {
+				if xval < minx {
+					minx = xval
+				}
+			}
+			if yval > maxy {
+				maxy = yval
+			} else {
+				if yval < miny {
+					miny = yval
+				}
+			}
+			ps = append(ps, xval)
+			ps = append(ps, yval)
+
+		} else if triangleCounter < dimTSize { //triangles come second.
+			if triangleCounter == 0 {
+				fmt.Println("reading triangles")
+			}
+			triangleCounter += 1
+			line := strings.Split(scanner.Text(), " ") //is there a way to group spaces?
+			//triangleid|vertcount|a|b|c
+			var triangleid, aidx, bidx, cidx int64
+			triangleid = 0
+			aidx = 0.0
+			bidx = 0.0
+			cidx = 0.0
+			valcount := 0
+			for _, v := range line {
+				if v != "" {
+					valcount += 1
+					switch valcount {
+					case 1:
+						triangleid, _ = strconv.ParseInt(v, 10, 32)
+					case 2:
+						//skip count of vertices
+						break
+					case 3:
+						aidx, _ = strconv.ParseInt(v, 10, 64)
+					case 4:
+						bidx, _ = strconv.ParseInt(v, 10, 64)
+					case 5:
+						cidx, _ = strconv.ParseInt(v, 10, 64)
+					}
+				}
+			}
+			a, aok := nodes[int64(aidx)]
+			if !aok {
+				panic(fmt.Sprintf("Not a ok! TriangleCounter is %v, a index is %v, and total triangles is %v", triangleCounter, aidx, dimTSize))
+			}
+			b, bok := nodes[int64(bidx)]
+			if !bok {
+				panic(fmt.Sprintf("Not b ok! TriangleCounter is %v, b index is %v, and total triangles is %v", triangleCounter, bidx, dimTSize))
+			}
+			c, cok := nodes[int64(cidx)]
+			if !cok {
+				panic(fmt.Sprintf("Not c ok! TriangleCounter is %v, c index is %v, and total triangles is %v", triangleCounter, cidx, dimTSize))
+			}
+			t := geometry.CreateTriangle(&a, &b, &c)
+			e := t.Extent()
+			triangles[triangleid] = t
+			//add to tree?
+			tr.Insert(e.LowerLeft.ToXY(), e.UpperRight.ToXY(), &t)
+		} else {
+			//must be in the hull def?
+			break
+		}
+
+	}
+	fmt.Println("Finished reading, computing Hull")
+	flathull := ConcaveHull.Compute(ConcaveHull.FlatPoints(ps))
+	ptcount := len(flathull) / 2
+	hull := make([]geometry.Point, ptcount+1)
+	index := 0
+	for i := 0; i < len(flathull); i += 2 {
+		hull[index] = geometry.Point{X: flathull[i], Y: flathull[i+1]}
+		index++
+	}
+	hull[index] = geometry.Point{X: flathull[0], Y: flathull[1]}
+	p := geometry.CreatePolygon(hull)
+	return &geometry.Tin{MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr, Hull: p}, err
 }

@@ -18,12 +18,18 @@ func Event(hazardfp string, inventoryfp string, frequency int) {
 		outfp += "." + outputPathParts[i]
 	}
 	outfp += "_consequences.json"
-	sw := consequences.InitGeoJsonResultsWriterFromFile(outfp)
+	sw, err := consequences.InitGeoJsonResultsWriterFromFile(outfp)
+	if err != nil {
+		panic("error creating ead output")
+	}
 	defer sw.Close()
 	hp := hazardprovider.Init(hazardfp)
 	hp.SetFrequency(frequency - int(hazardprovider.Two)) //offset to zero based position.
 	defer hp.Close()
-	nsp := structureprovider.InitGPK(inventoryfp, "nsi")
+	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
+	if err != nil {
+		panic("error creating ead output")
+	}
 	fmt.Println("Getting bbox")
 	bbox, err := hp.ProvideHazardBoundary()
 	if err != nil {

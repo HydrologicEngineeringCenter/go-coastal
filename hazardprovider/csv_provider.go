@@ -2,6 +2,7 @@ package hazardprovider
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
@@ -25,6 +26,17 @@ func Init(fp string) *csvHazardProvider {
 	if err != nil {
 		panic(err)
 	}
+	c := time.Now()
+	return &csvHazardProvider{ds: t, computeStart: c}
+}
+func InitWithGrd(grdfp string, resultsfp string) *csvHazardProvider {
+	// Open the file
+	t, err := processGrdAndCSV(grdfp, resultsfp)
+	if err != nil {
+		panic(err)
+	}
+	jsonfp := strings.Replace(grdfp, ".grd", ".json", -1)
+	t.Hull.ToGeoJson(jsonfp)
 	c := time.Now()
 	return &csvHazardProvider{ds: t, computeStart: c}
 }
