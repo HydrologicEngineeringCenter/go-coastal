@@ -75,14 +75,16 @@ func (srw *oseResultsWriter) Write(r consequences.Result) {
 		srw.totalsbyfreq["Total Structure Count"] = dc
 	}
 	//update jobs.
-	jbs, ok := srw.totalsbyfreq["Jobs"]
-	if ok {
-		jbs[srw.frequencyIndex] += j
-		srw.totalsbyfreq["Jobs"] = jbs
-	} else {
-		dc := make([]int32, len(srw.frequencies))
-		dc[srw.frequencyIndex] = j
-		srw.totalsbyfreq["Jobs"] = dc
+	if damcat != "Res" {
+		jbs, ok := srw.totalsbyfreq["Jobs"]
+		if ok {
+			jbs[srw.frequencyIndex] += j
+			srw.totalsbyfreq["Jobs"] = jbs
+		} else {
+			dc := make([]int32, len(srw.frequencies))
+			dc[srw.frequencyIndex] = j
+			srw.totalsbyfreq["Jobs"] = dc
+		}
 	}
 	//update u65.
 	under, ok := srw.totalsbyfreq["Under 65"]

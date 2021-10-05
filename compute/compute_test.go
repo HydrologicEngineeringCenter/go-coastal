@@ -28,10 +28,8 @@ func Test_EAD_OSE(t *testing.T) {
 	ExpectedAnnualDamages_OSEOutput(hp, sp)
 }
 
-/*
-func Test_EADGpk_parallel(t *testing.T) {
+func Test_EAD_OSE_CT(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
-	ExpectedAnnualDamagesGPK_FIPS(hp, sp, "12")
+	ExpectedAnnualDamages_OSEOutput_CT(hp, sp, "12086004404")
 }
-*/
