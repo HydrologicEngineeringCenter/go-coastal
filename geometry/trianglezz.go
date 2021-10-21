@@ -75,8 +75,11 @@ func (t TriangleZZ) GetValues(x float64, y float64) ([]float64, []float64, error
 	vals := make([]float64, lenz)
 	hmos := make([]float64, lenz)
 	if w1 >= 0 && w2 >= 0 && w3 >= 0 {
+		ele := (w1*t.p1.ZElev + w2*t.p2.ZElev + w3*t.p3.ZElev)
 		for i, z := range t.p1.ZSwl {
-			vals[i] = (w1*z + w2*t.p2.ZSwl[i] + w3*t.p3.ZSwl[i])
+			swl := (w1*z + w2*t.p2.ZSwl[i] + w3*t.p3.ZSwl[i])
+			//should i do data checks on ele?
+			vals[i] = swl - ele
 			hmos[i] = (w1*t.p1.ZHm0[i] + w2*t.p2.ZHm0[i] + w3*t.p3.ZHm0[i])
 		}
 		return vals, hmos, nil

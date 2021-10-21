@@ -3,6 +3,7 @@ package geometry
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/USACE/go-consequences/hazards"
 	"github.com/tidwall/rtree"
@@ -129,8 +130,17 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 		if v == 0 {
 			swls[i] = nodata
 		}
+		if hmos[i] == 0 {
+			hmos[i] = nodata
+		}
+		if math.IsNaN(v) {
+			swls[i] = nodata
+		}
+		if math.IsNaN(hmos[i]) {
+			hmos[i] = nodata
+		}
 		h := hazards.CoastalEvent{}
-		h.SetDepth(v)
+		h.SetDepth(swls[i])
 		h.SetSalinity(true)
 		h.SetWaveHeight(hmos[i])
 		hs = append(hs, h)
