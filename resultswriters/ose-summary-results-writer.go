@@ -31,6 +31,7 @@ func (srw *oseResultsWriter) SetFrequencyIndex(index int) {
 func (srw *oseResultsWriter) Write(r consequences.Result) {
 	//hardcoding for structures to experiment and think it through.
 	var cat = "damage category"
+	var ot = "occupancy type"
 	var jobs = "pop2pmu65"
 	var j int32 = 0
 	var o int32 = 0
@@ -38,10 +39,14 @@ func (srw *oseResultsWriter) Write(r consequences.Result) {
 	var u65 = "pop2amu65"
 	var o65 = "pop2amo65"
 	var damcat = ""
+	var occtype = ""
 	h := r.Headers
 	for i, v := range h {
 		if v == cat {
 			damcat = r.Result[i].(string)
+		}
+		if v == ot {
+			occtype = r.Result[i].(string)
 		}
 		if v == jobs {
 			j = r.Result[i].(int32)
@@ -64,6 +69,29 @@ func (srw *oseResultsWriter) Write(r consequences.Result) {
 		dc[srw.frequencyIndex] = 1
 		srw.totalsbyfreq[damcat] = dc
 	}
+	//update occtype totals.
+	if occtype == "GOV2" {
+		t, ok := srw.totalsbyfreq[occtype]
+		if ok {
+			t[srw.frequencyIndex] += 1
+			srw.totalsbyfreq[occtype] = t
+		} else {
+			dc := make([]int32, len(srw.frequencies))
+			dc[srw.frequencyIndex] = 1
+			srw.totalsbyfreq[occtype] = dc
+		}
+	}
+	if occtype == "COM6" {
+		t, ok := srw.totalsbyfreq[occtype]
+		if ok {
+			t[srw.frequencyIndex] += 1
+			srw.totalsbyfreq[occtype] = t
+		} else {
+			dc := make([]int32, len(srw.frequencies))
+			dc[srw.frequencyIndex] = 1
+			srw.totalsbyfreq[occtype] = dc
+		}
+	}
 	//update totals.
 	tot, ok := srw.totalsbyfreq["Total Structure Count"]
 	if ok {
@@ -76,39 +104,39 @@ func (srw *oseResultsWriter) Write(r consequences.Result) {
 	}
 	//update jobs.
 	if damcat != "Res" {
-		jbs, ok := srw.totalsbyfreq["Jobs"]
+		jbs, ok := srw.totalsbyfreq["Jobs Impacted"]
 		if ok {
 			jbs[srw.frequencyIndex] += j
-			srw.totalsbyfreq["Jobs"] = jbs
+			srw.totalsbyfreq["Jobs Impacted"] = jbs
 		} else {
 			dc := make([]int32, len(srw.frequencies))
 			dc[srw.frequencyIndex] = j
-			srw.totalsbyfreq["Jobs"] = dc
+			srw.totalsbyfreq["Jobs Impacted"] = dc
 		}
 	}
 	//update u65.
-	under, ok := srw.totalsbyfreq["Under 65"]
+	under, ok := srw.totalsbyfreq["Population Impacted Under 65 Day"]
 	if ok {
 		under[srw.frequencyIndex] += u
-		srw.totalsbyfreq["Under 65"] = under
+		srw.totalsbyfreq["Population Impacted Under 65 Day"] = under
 	} else {
 		dc := make([]int32, len(srw.frequencies))
 		dc[srw.frequencyIndex] = u
-		srw.totalsbyfreq["Under 65"] = dc
+		srw.totalsbyfreq["Population Impacted Under 65 Day"] = dc
 	}
 	//update o65.
-	over, ok := srw.totalsbyfreq["Over 65"]
+	over, ok := srw.totalsbyfreq["Population Impacted Over 65 Day"]
 	if ok {
 		over[srw.frequencyIndex] += o
-		srw.totalsbyfreq["Over 65"] = over
+		srw.totalsbyfreq["Population Impacted Over 65 Day"] = over
 	} else {
 		dc := make([]int32, len(srw.frequencies))
 		dc[srw.frequencyIndex] = u
-		srw.totalsbyfreq["Over 65"] = dc
+		srw.totalsbyfreq["Population Impacted Over 65 Day"] = dc
 	}
 }
 func (srw *oseResultsWriter) Close() {
-	headerstring := "Category of Impact"
+	headerstring := "Category of Impact\\Frequency of Flooding"
 	for _, f := range srw.frequencies {
 		headerstring = fmt.Sprintf("%v, %v", headerstring, f)
 	}

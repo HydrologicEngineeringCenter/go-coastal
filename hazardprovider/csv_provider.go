@@ -2,7 +2,6 @@ package hazardprovider
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
@@ -29,14 +28,14 @@ func Init(fp string) *csvHazardProvider {
 	c := time.Now()
 	return &csvHazardProvider{ds: t, computeStart: c}
 }
-func InitWithGrd(grdfp string, resultsfp string) *csvHazardProvider {
+func InitWithGrd(grdfp string, swlfp string, hmofp string) *csvHazardProvider {
 	// Open the file
-	t, err := processGrdAndCSV(grdfp, resultsfp)
+	t, err := processGrdAndCSVs(grdfp, swlfp, hmofp)
 	if err != nil {
 		panic(err)
 	}
-	jsonfp := strings.Replace(grdfp, ".grd", ".json", -1)
-	t.Hull.ToGeoJson(jsonfp)
+	//jsonfp := strings.Replace(grdfp, ".grd", ".json", -1)
+	//t.Hull.ToGeoJson(jsonfp)
 	c := time.Now()
 	return &csvHazardProvider{ds: t, computeStart: c}
 }
@@ -70,7 +69,6 @@ func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.Hazar
 	return h, notIn
 }
 func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.HazardEvent, error) {
-	var hs []hazards.HazardEvent
 	csv.queryCount++
 	//check if point is in the hull polygon.
 	p := geometry.Point{X: l.X, Y: l.Y}
@@ -83,20 +81,13 @@ func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.Ha
 	if csv.ds.Hull.Contains(p) {
 		v, err := csv.ds.ComputeValues(l.X, l.Y)
 		if err != nil {
-			return hs, err
-		}
-		lenv := len(v)
-		for i := 0; i < lenv; i++ {
-			h := hazards.CoastalEvent{}
-			h.SetDepth(v[i])
-			h.SetSalinity(true)
-			hs = append(hs, h)
+			return nil, err
 		}
 		csv.actualComputedStructures++
-		return hs, nil
+		return v, nil
 	}
 	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
-	return hs, notIn
+	return nil, notIn
 }
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox := make([]float64, 4)

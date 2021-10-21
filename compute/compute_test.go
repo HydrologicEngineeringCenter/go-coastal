@@ -22,6 +22,13 @@ func Test_EADGpk(t *testing.T) {
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
 	ExpectedAnnualDamagesGPK(hp, sp)
 }
+func Test_EADGpk_WithWaves(t *testing.T) {
+	fp := "/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers.grd"
+	swlp := "/workspaces/go-coastal/data/NACS_Nantucket_PCHA_SLC0_SWL_BE_v20210722.csv"
+	hmop := "/workspaces/go-coastal/data/NACS_Nantucket_PCHA_SLC0_Hm0_BE_v20210722.csv"
+	sp := "/workspaces/go-coastal/data/nsi.gpkg"
+	ExpectedAnnualDamagesGPK_WithWAVE(fp, swlp, hmop, sp)
+}
 func Test_EAD_OSE(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
@@ -31,5 +38,5 @@ func Test_EAD_OSE(t *testing.T) {
 func Test_EAD_OSE_CT(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
-	ExpectedAnnualDamages_OSEOutput_CT(hp, sp, "12086004404")
+	ExpectedAnnualDamages_OSEOutput_CT(hp, sp, "12086008900")
 }

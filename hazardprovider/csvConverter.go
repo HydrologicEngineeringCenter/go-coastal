@@ -156,7 +156,7 @@ func process_TIN(fp string) (*geometry.Tin, error) {
 		t.Json(s + ".json")
 	*/
 }
-func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
+func processGrdAndCSVs(grdfp string, swlfp string, hm0fp string) (*geometry.Tin, error) {
 	grdf, err := os.Open(grdfp)
 	if err != nil {
 		panic(err)
@@ -171,8 +171,8 @@ func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
 	vals := strings.Split(row2, "  ") //not sure this will always work correctly
 	dimNSize, _ := strconv.ParseInt(vals[1], 10, 64)
 	dimTSize, _ := strconv.ParseInt(vals[0], 10, 64)
-	nodes := make(map[int64]geometry.PointZ)
-	triangles := make(map[int64]geometry.Triangle)
+	nodes := make(map[int32]geometry.PointZZ)
+	triangles := make(map[int64]geometry.TriangleZZ)
 	var triangleCounter int64
 	var pointCounter int64
 	triangleCounter = 0
@@ -182,8 +182,7 @@ func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
 	miny = 180
 	maxx = -180
 	maxy = -180
-	var tr rtree.RTree
-	ps := make([]float64, 0)
+	loadData := true
 	for scanner.Scan() {
 		if pointCounter < dimNSize { //points come first.
 			if pointCounter == 0 {
@@ -192,48 +191,107 @@ func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
 			pointCounter += 1
 			line := strings.Split(scanner.Text(), " ") //is there a way to group spaces?
 			//nodeid|X|Y|Z
-			var nodeid int64
+			var nodeid int32
 			nodeid = 0
 			xval := 0.0
 			yval := 0.0
-			zval := 0.0
+			zval := 0.0 //terrain
 			valcount := 0
 			for _, v := range line {
 				if v != "" {
 					valcount += 1
 					switch valcount {
 					case 1:
-						nodeid, _ = strconv.ParseInt(v, 10, 32)
+						tmpInt, err := strconv.ParseInt(v, 10, 32)
+						if err != nil {
+							panic(err)
+						}
+						nodeid = int32(tmpInt)
 					case 2:
 						xval, _ = strconv.ParseFloat(v, 64)
 					case 3:
 						yval, _ = strconv.ParseFloat(v, 64)
 					case 4:
-						zval, _ = strconv.ParseFloat(v, 64)
+						zval, _ = strconv.ParseFloat(v, 64) //terrain
 					}
 				}
 			}
-			//replace with depth values?
-			zvals := []float64{zval}
-			nodes[nodeid] = geometry.PointZ{Point: &geometry.Point{X: xval, Y: yval}, Z: zvals}
-			if xval > maxx {
-				maxx = xval
-			} else {
-				if xval < minx {
-					minx = xval
-				}
-			}
-			if yval > maxy {
-				maxy = yval
-			} else {
-				if yval < miny {
-					miny = yval
-				}
-			}
-			ps = append(ps, xval)
-			ps = append(ps, yval)
-
+			nodes[nodeid] = geometry.PointZZ{Point: &geometry.Point{X: xval, Y: yval}, ZElev: zval}
 		} else if triangleCounter < dimTSize { //triangles come second.
+			if loadData {
+				//read the other two csv files to load in data into the nodes.
+				swlf, err := os.Open(swlfp)
+				if err != nil {
+					panic(err)
+				}
+				defer swlf.Close()
+
+				swlscanner := bufio.NewScanner(swlf)
+				swlscanner.Scan() // burn the header
+				swlscanner.Scan() //probabilities
+				hmof, err := os.Open(hm0fp)
+				if err != nil {
+					panic(err)
+				}
+				defer hmof.Close()
+				hmoscanner := bufio.NewScanner(hmof)
+				hmoscanner.Scan() //burn the header
+				hmoscanner.Scan() //probabilities
+				nantucketfrequencies := []float64{1e+01, 5e+00, 2e+00, 1e+00, 5e-01, 2e-01, 1e-01, 5e-02, 2e-02, 1e-02, 5e-03, 2e-03, 1e-03, 5e-04, 2e-04, 1e-04, 5e-05, 2e-05, 1e-05, 5e-06, 2e-06, 1e-06}
+				nodeididx := 1
+				nodata := 0.0
+				for swlscanner.Scan() {
+					hmoscanner.Scan()
+					//parse each row.
+					swllines := strings.Split(swlscanner.Text(), ",")
+					hmolines := strings.Split(swlscanner.Text(), ",")
+					nodeidval, err := strconv.ParseInt(swllines[nodeididx], 10, 32)
+					if err != nil {
+						panic(err)
+					}
+					nodeid := int32(nodeidval)
+
+					//loop over z values
+					zswlvals := make([]float64, len(nantucketfrequencies))
+					zhmovals := make([]float64, len(nantucketfrequencies))
+					node := nodes[nodeid]
+					for i, _ := range nantucketfrequencies {
+						zswlval, err := strconv.ParseFloat(swllines[i+4], 64) //need to read all values and load into an array now.
+						zhmo, err2 := strconv.ParseFloat(hmolines[i+4], 64)
+						if err != nil {
+							//panic(err)
+							zswlvals[i] = nodata
+							zhmovals[i] = nodata
+						} else {
+							if node.ZElev < 0 {
+								zswlval = zswlval + node.ZElev //(minus a negative to get value above sea level...)
+							}
+							if zswlval == 0 {
+								zswlval = nodata
+							} else {
+								zswlval *= 3.28084 //convert from meters to feet
+							}
+							zswlvals[i] = zswlval
+							if err2 != nil {
+								zhmovals[i] = nodata
+							} else {
+								if zhmo == 0 {
+									zhmo = nodata
+								} else {
+									zhmo *= 3.28084 //convert from meters to feet
+								}
+								zhmovals[i] = zhmo
+							}
+						}
+
+					}
+					node.ZHm0 = zhmovals
+					node.ZSwl = zswlvals
+					nodes[nodeid] = node
+				}
+				loadData = false
+			}
+
 			if triangleCounter == 0 {
 				fmt.Println("reading triangles")
 			}
@@ -242,9 +300,9 @@ func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
 			//triangleid|vertcount|a|b|c
 			var triangleid, aidx, bidx, cidx int64
 			triangleid = 0
-			aidx = 0.0
-			bidx = 0.0
-			cidx = 0.0
+			aidx = 0
+			bidx = 0
+			cidx = 0
 			valcount := 0
 			for _, v := range line {
 				if v != "" {
@@ -264,39 +322,74 @@ func processGrdAndCSV(grdfp string, csvfp string) (*geometry.Tin, error) {
 					}
 				}
 			}
-			a, aok := nodes[int64(aidx)]
+			a, aok := nodes[int32(aidx)]
 			if !aok {
 				panic(fmt.Sprintf("Not a ok! TriangleCounter is %v, a index is %v, and total triangles is %v", triangleCounter, aidx, dimTSize))
 			}
-			b, bok := nodes[int64(bidx)]
+			b, bok := nodes[int32(bidx)]
 			if !bok {
 				panic(fmt.Sprintf("Not b ok! TriangleCounter is %v, b index is %v, and total triangles is %v", triangleCounter, bidx, dimTSize))
 			}
-			c, cok := nodes[int64(cidx)]
+			c, cok := nodes[int32(cidx)]
 			if !cok {
 				panic(fmt.Sprintf("Not c ok! TriangleCounter is %v, c index is %v, and total triangles is %v", triangleCounter, cidx, dimTSize))
 			}
-			t := geometry.CreateTriangle(&a, &b, &c)
-			e := t.Extent()
+			t := geometry.CreateTriangleZZ(&a, &b, &c)
 			triangles[triangleid] = t
-			//add to tree?
-			tr.Insert(e.LowerLeft.ToXY(), e.UpperRight.ToXY(), &t)
+
 		} else {
 			//must be in the hull def?
 			break
 		}
+	}
 
+	//should probably reduce the space to remove triangles.
+	var tr rtree.RTree
+	ps := make([]float64, 0)
+	kept := 0
+	culled := 0
+	for _, triangle := range triangles {
+		if triangle.HasData() {
+			//add to tree?
+			e := triangle.Extent()
+			tr.Insert(e.LowerLeft.ToXY(), e.UpperRight.ToXY(), triangle)
+			if e.Max()[0] > maxx {
+				maxx = e.Max()[0]
+			} else {
+				if e.Min()[0] < minx {
+					minx = e.Min()[0]
+				}
+			}
+			if e.Max()[1] > maxy {
+				maxy = e.Max()[1]
+			} else {
+				if e.Min()[1] < miny {
+					miny = e.Min()[1]
+				}
+			}
+			ps = append(ps, triangle.Points()...)
+			kept += 1
+		} else {
+			culled += 1
+		}
 	}
+	fmt.Println(fmt.Sprintf("kept %v, culled %v", kept, culled))
 	fmt.Println("Finished reading, computing Hull")
-	flathull := ConcaveHull.Compute(ConcaveHull.FlatPoints(ps))
-	ptcount := len(flathull) / 2
-	hull := make([]geometry.Point, ptcount+1)
-	index := 0
-	for i := 0; i < len(flathull); i += 2 {
-		hull[index] = geometry.Point{X: flathull[i], Y: flathull[i+1]}
-		index++
+	if len(ps) > 2 {
+		flathull := ConcaveHull.Compute(ConcaveHull.FlatPoints(ps))
+		ptcount := len(flathull) / 2
+		hull := make([]geometry.Point, ptcount+1)
+		index := 0
+		for i := 0; i < len(flathull); i += 2 {
+			hull[index] = geometry.Point{X: flathull[i], Y: flathull[i+1]}
+			index++
+		}
+		hull[index] = geometry.Point{X: flathull[0], Y: flathull[1]}
+		p := geometry.CreatePolygon(hull)
+		return &geometry.Tin{MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr, Hull: p}, err
+	} else {
+		fmt.Println("No Points, no Hull")
+		return &geometry.Tin{MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr}, err
 	}
-	hull[index] = geometry.Point{X: flathull[0], Y: flathull[1]}
-	p := geometry.CreatePolygon(hull)
-	return &geometry.Tin{MaxX: maxx, MinX: minx, MaxY: maxy, MinY: miny, Tree: tr, Hull: p}, err
+
 }

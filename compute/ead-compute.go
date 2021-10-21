@@ -155,6 +155,77 @@ func ExpectedAnnualDamagesGPK(hazardfp string, inventoryfp string) {
 		}
 	})
 }
+func ExpectedAnnualDamagesGPK_WithWAVE(grdfp string, swlfp string, hmo string, inventoryfp string) {
+	outputPathParts := strings.Split(swlfp, ".")
+	outfp := outputPathParts[0]
+	for i := 1; i < len(outputPathParts)-1; i++ {
+		outfp += "." + outputPathParts[i]
+	}
+	outfp += "_ead_consequences.gpkg"
+	sw, err := consequences.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
+	if err != nil {
+		panic("error creating ead output")
+	}
+	defer sw.Close()
+	hp := hazardprovider.InitWithGrd(grdfp, swlfp, hmo)
+	defer hp.Close()
+	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
+	if err != nil {
+		panic("error creating ead output")
+	}
+	nsp.SetDeterministic(true)
+	fmt.Println("Getting bbox")
+	bbox, err := hp.ProvideHazardBoundary()
+	if err != nil {
+		log.Panicf("Unable to get the raster bounding box: %s", err)
+	}
+	fmt.Println(bbox.ToString())
+	frequencies := []float64{10.0, 5.0, 2.0, 1.0, .5, .2, .1, .05, .02, .01, .005, .002, .001, .0005, .0002, .0001, .00005, .00002, .00001, .000005, .000002, .000001}
+	//get FilterStructures
+	nsp.ByBbox(bbox, func(f consequences.Receptor) {
+		//ProvideHazard works off of a geography.Location
+		ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
+		//compute damages based on hazard being able to provide depth
+		header := []string{"fd_id", "x", "y", "hazards", "damage category", "occupancy type", "structure EAD", "content EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
+		results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0}
+		var ret = consequences.Result{Headers: header, Result: results}
+		if err2 == nil {
+			//ds is an array of hazard events
+			cdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+			sdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+			lends := len(ds)
+			for i, d := range ds {
+				r, err := f.Compute(d)
+				if err == nil {
+					if i == lends-1 { //on the last one get the attributes.
+						ret.Result[0] = r.Result[0]
+						ret.Result[1] = r.Result[1]
+						ret.Result[2] = r.Result[2]
+						ret.Result[4] = r.Result[4]
+						ret.Result[5] = r.Result[5]
+						ret.Result[8] = r.Result[8]
+						ret.Result[9] = r.Result[9]
+						ret.Result[10] = r.Result[10]
+						ret.Result[11] = r.Result[11]
+					}
+					sdams[i] = r.Result[6].(float64)
+					cdams[i] = r.Result[7].(float64)
+				}
+			}
+			//compute EAD
+			cead := compute.ComputeSpecialEAD(cdams, frequencies)
+			sead := compute.ComputeSpecialEAD(sdams, frequencies)
+			ret.Result[6] = sead
+			ret.Result[7] = cead
+			if ret.Result[1] != 0.0 {
+				if sead != 0 || cead != 0 {
+					sw.Write(ret)
+				}
+			}
+
+		}
+	})
+}
 
 func ExpectedAnnualDamages_OSEOutput(hazardfp string, inventoryfp string) {
 	frequencies := []float64{.5, .2, .1, .05, .02, .01, .005, .002, .001, .0002, .0001}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/USACE/go-consequences/hazards"
 	"github.com/tidwall/rtree"
 )
 
@@ -90,32 +91,49 @@ func (t *Tin) ComputeValue(x float64, y float64) (float64, error) {
 	}
 	return nodata, errors.New("Point was not in triangles.")
 }
-func (t *Tin) ComputeValues(x float64, y float64) ([]float64, error) {
-	var vs []float64
+func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error) {
+	var swls []float64
+	var hs []hazards.HazardEvent
+	var hmos []float64
 	nodata := -9999.0
 	var err error
 	t.Tree.Search([2]float64{x, y}, [2]float64{x, y},
 		func(min, max [2]float64, value interface{}) bool {
 			tri, ok := value.(Triangle)
 			if ok {
-				vs, err = tri.GetValues(x, y)
+				swls, err = tri.GetValues(x, y)
 				if err == nil {
 					return false
 				} else {
 					return true
 				}
+			} else {
+				trizz, ok2 := value.(TriangleZZ)
+				if ok2 {
+					swls, hmos, err = trizz.GetValues(x, y)
+					if err == nil {
+						return false
+					} else {
+						return true
+					}
+				}
+				return true
 			}
-			return true
 		},
 	)
 	if err != nil {
 		//err was not set back to nil, point must not be in any triangle.
-		return vs, err
+		return nil, err
 	}
-	for i, v := range vs {
+	for i, v := range swls {
 		if v == 0 {
-			vs[i] = nodata
+			swls[i] = nodata
 		}
+		h := hazards.CoastalEvent{}
+		h.SetDepth(v)
+		h.SetSalinity(true)
+		h.SetWaveHeight(hmos[i])
+		hs = append(hs, h)
 	}
-	return vs, err
+	return hs, err
 }

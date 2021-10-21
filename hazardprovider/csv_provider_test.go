@@ -24,7 +24,7 @@ func Test_ConcaveHull(t *testing.T) {
 }
 func Test_ConcaveHull_GRD(t *testing.T) {
 	fp := "/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers.grd"
-	hp := InitWithGrd(fp, "")
-	hp.ds.Hull.ToGeoJson("/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers.json")
+	hp := InitWithGrd(fp, "/workspaces/go-coastal/data/NACS_Nantucket_PCHA_SLC0_SWL_BE_v20210722.csv", "/workspaces/go-coastal/data/NACS_Nantucket_PCHA_SLC0_Hm0_BE_v20210722.csv")
+	hp.ds.Hull.ToGeoJson("/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers_culled.json")
 	fmt.Println(hp)
 }
