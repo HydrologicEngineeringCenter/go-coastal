@@ -98,6 +98,7 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 	var hmos []float64
 	nodata := -9999.0
 	var err error
+	var hasWave = false
 	t.Tree.Search([2]float64{x, y}, [2]float64{x, y},
 		func(min, max [2]float64, value interface{}) bool {
 			tri, ok := value.(Triangle)
@@ -111,6 +112,7 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 			} else {
 				trizz, ok2 := value.(TriangleZZ)
 				if ok2 {
+					hasWave = true
 					swls, hmos, err = trizz.GetValues(x, y)
 					if err == nil {
 						return false
@@ -130,19 +132,21 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 		if v == 0 {
 			swls[i] = nodata
 		}
-		if hmos[i] == 0 {
-			hmos[i] = nodata
-		}
 		if math.IsNaN(v) {
 			swls[i] = nodata
-		}
-		if math.IsNaN(hmos[i]) {
-			hmos[i] = nodata
 		}
 		h := hazards.CoastalEvent{}
 		h.SetDepth(swls[i])
 		h.SetSalinity(true)
-		h.SetWaveHeight(hmos[i])
+		if hasWave {
+			if hmos[i] == 0 {
+				hmos[i] = nodata
+			}
+			if math.IsNaN(hmos[i]) {
+				hmos[i] = nodata
+			}
+			h.SetWaveHeight(hmos[i])
+		}
 		hs = append(hs, h)
 	}
 	return hs, err

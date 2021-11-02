@@ -1,9 +1,11 @@
 package compute
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
+	"github.com/USACE/go-consequences/consequences"
 )
 
 func Test_Event(t *testing.T) {
@@ -17,10 +19,21 @@ func Test_EAD(t *testing.T) {
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
 	ExpectedAnnualDamages(hp, sp)
 }
-func Test_EADGpk(t *testing.T) {
+func Test_EAD_resultsWriter(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
-	ExpectedAnnualDamagesGPK(hp, sp)
+	outputPathParts := strings.Split(hp, ".")
+	outfp := outputPathParts[0]
+	for i := 1; i < len(outputPathParts)-1; i++ {
+		outfp += "." + outputPathParts[i]
+	}
+	outfp += "_ead_consequences.shp"
+	sw, err := consequences.InitShpResultsWriter(outfp, "EADResults") //swap to geopackage.
+	if err != nil {
+		panic("error creating ead output")
+	}
+	defer sw.Close()
+	ExpectedAnnualDamages_ResultsWriter(hp, sp, sw)
 }
 func Test_EADGpk_WithWaves(t *testing.T) {
 	fp := "/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers.grd"

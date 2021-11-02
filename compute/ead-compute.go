@@ -84,18 +84,8 @@ func ExpectedAnnualDamages(hazardfp string, inventoryfp string) {
 		}
 	})
 }
-func ExpectedAnnualDamagesGPK(hazardfp string, inventoryfp string) {
-	outputPathParts := strings.Split(hazardfp, ".")
-	outfp := outputPathParts[0]
-	for i := 1; i < len(outputPathParts)-1; i++ {
-		outfp += "." + outputPathParts[i]
-	}
-	outfp += "_ead_consequences.gpkg"
-	sw, err := consequences.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
-	if err != nil {
-		panic("error creating ead output")
-	}
-	defer sw.Close()
+func ExpectedAnnualDamages_ResultsWriter(hazardfp string, inventoryfp string, sw consequences.ResultsWriter) {
+
 	hp := hazardprovider.Init(hazardfp)
 	defer hp.Close()
 	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
