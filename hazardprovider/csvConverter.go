@@ -156,6 +156,19 @@ func process_TIN(fp string) (*geometry.Tin, error) {
 		t.Json(s + ".json")
 	*/
 }
+
+/*
+logic is:
+ - 1st read nodes
+ 	- add probability arrays for SWL/Hm0 to each node
+	- which probability runs?
+ - 2nd build triangles using the nodes
+    - build queryable rtree index on triangles
+ - 3rd create concave hull
+	- why do points option?
+
+
+*/
 func processGrdAndCSVs(grdfp string, swlfp string, hm0fp string) (*geometry.Tin, error) {
 	grdf, err := os.Open(grdfp)
 	if err != nil {

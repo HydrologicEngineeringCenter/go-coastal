@@ -68,6 +68,8 @@ func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.Hazar
 	h.SetDepth(-9999.0)
 	return h, notIn
 }
+
+//implement
 func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.HazardEvent, error) {
 	csv.queryCount++
 	//check if point is in the hull polygon.
@@ -89,6 +91,8 @@ func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.Ha
 	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
 	return nil, notIn
 }
+
+//implement
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox := make([]float64, 4)
 	bbox[0] = csv.ds.MinX //upper left x
@@ -97,6 +101,8 @@ func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox[3] = csv.ds.MinY //lower right y
 	return geography.BBox{Bbox: bbox}, nil
 }
+
+//implement
 func (csv *csvHazardProvider) Close() {
 	//do nothing?
 	n := time.Since(csv.computeStart)

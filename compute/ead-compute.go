@@ -88,6 +88,7 @@ func ExpectedAnnualDamages_ResultsWriter(hazardfp string, inventoryfp string, sw
 
 	hp := hazardprovider.Init(hazardfp)
 	defer hp.Close()
+	//@TODO handle structure file not found better
 	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
 	if err != nil {
 		panic("error creating ead output")

@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/HydrologicEngineeringCenter/go-coastal/compute"
 )
 
 func main() {
@@ -15,7 +13,7 @@ func main() {
 		hfp := argsWithoutProg[0]
 		sfp := argsWithoutProg[1]
 		fmt.Println(fmt.Sprintf("Computing EAD for %v using an iventory at path %v", hfp, sfp))
-		compute.ExpectedAnnualDamagesGPK(hfp, sfp)
+		//compute.ExpectedAnnualDamagesGPK(hfp, sfp)
 	}
 
 }

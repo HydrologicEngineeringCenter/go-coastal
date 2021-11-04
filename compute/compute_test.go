@@ -10,8 +10,8 @@ import (
 
 func Test_Event(t *testing.T) {
 	f := hazardprovider.OneHundred
-	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv"
-	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
+	hp := "/Working/hec/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv"
+	sp := "/Working/hec/go-coastal/data/nsiv2_12.gpkg"
 	Event(hp, sp, int(f)) //pass in frequency
 }
 func Test_EAD(t *testing.T) {
@@ -20,8 +20,8 @@ func Test_EAD(t *testing.T) {
 	ExpectedAnnualDamages(hp, sp)
 }
 func Test_EAD_resultsWriter(t *testing.T) {
-	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
-	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
+	hp := "/Working/hec/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
+	sp := "/Working/hec/go-coastal/data/nsiv2_12.gpkg"
 	outputPathParts := strings.Split(hp, ".")
 	outfp := outputPathParts[0]
 	for i := 1; i < len(outputPathParts)-1; i++ {
@@ -35,11 +35,13 @@ func Test_EAD_resultsWriter(t *testing.T) {
 	defer sw.Close()
 	ExpectedAnnualDamages_ResultsWriter(hp, sp, sw)
 }
+
+//@TODO:export this as a c function
 func Test_EADGpk_WithWaves(t *testing.T) {
-	fp := "/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers.grd"
-	swlp := "/workspaces/go-coastal/data/NACS_Nantucket_PCHA_SLC0_SWL_BE_v20210722.csv"
-	hmop := "/workspaces/go-coastal/data/NACS_Nantucket_PCHA_SLC0_Hm0_BE_v20210722.csv"
-	sp := "/workspaces/go-coastal/data/nsi.gpkg"
+	fp := "/Working/hec/go-coastal/data/NAC2014_R01_ClosedRivers.grd"
+	swlp := "/Working/hec/go-coastal/data/NACS_Nantucket_PCHA_SLC0_SWL_BE_v20210722.csv"
+	hmop := "/Working/hec/go-coastal/data/NACS_Nantucket_PCHA_SLC0_Hm0_BE_v20210722.csv"
+	sp := "/Working/hec/go-coastal/data/nsi.gpkg"
 	ExpectedAnnualDamagesGPK_WithWAVE(fp, swlp, hmop, sp)
 }
 func Test_EAD_OSE(t *testing.T) {
