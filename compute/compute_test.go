@@ -44,6 +44,15 @@ func Test_EADGpk_WithWaves(t *testing.T) {
 	sp := "/Working/hec/go-coastal/data/nsi.gpkg"
 	ExpectedAnnualDamagesGPK_WithWAVE(fp, swlp, hmop, sp)
 }
+
+func Test_EADGpk_WithWavesHdf5(t *testing.T) {
+
+	fp := "/Working/hec/go-coastal/CHS_LACS_Grid_Information.h5"
+	swlp := "/Working/hec/go-coastal/CHS_LACS_AEF_SWL_SLC0.h5"
+	hmop := "/Working/hec/go-coastal/CHS_LACS_AEF_Hm0_SLC0.h5"
+	sp := "/Working/hec/go-coastal/data/nsi.gpkg"
+	ExpectedAnnualDamagesGPK_WithWAVE_HDF(fp, swlp, hmop, "BE (standard)", sp)
+}
 func Test_EAD_OSE(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
