@@ -8,6 +8,7 @@ import (
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
 	"github.com/USACE/go-consequences/consequences"
 	"github.com/USACE/go-consequences/geography"
+	gcrw "github.com/USACE/go-consequences/resultswriters"
 	"github.com/USACE/go-consequences/structureprovider"
 )
 
@@ -18,7 +19,7 @@ func Event(hazardfp string, inventoryfp string, frequency int) {
 		outfp += "." + outputPathParts[i]
 	}
 	outfp += "_consequences.json"
-	sw, err := consequences.InitGeoJsonResultsWriterFromFile(outfp)
+	sw, err := gcrw.InitGeoJsonResultsWriterFromFile(outfp)
 	if err != nil {
 		panic("error creating ead output")
 	}
