@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20210916021611-3ecc0cdff5ec // indirect
-	github.com/USACE/go-consequences v0.0.0-20210911181951-c7b4a9fe1e1f
+	github.com/USACE/go-consequences v0.0.0-20211113220300-3632c0f789d5
 	github.com/furstenheim/ConcaveHull v0.0.0-20181124172300-79de6d753046
 	github.com/furstenheim/SimpleRTree v0.0.0-20190118211408-bef8d7c97e9c // indirect
 	github.com/furstenheim/go-convex-hull-2d v0.0.0-20181121204724-08788ab09726 // indirect
