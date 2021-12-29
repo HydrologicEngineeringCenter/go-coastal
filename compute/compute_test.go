@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
-	"github.com/USACE/go-consequences/consequences"
+	gcrw "github.com/USACE/go-consequences/resultswriters"
 )
 
 func Test_Event(t *testing.T) {
@@ -28,7 +28,7 @@ func Test_EAD_resultsWriter(t *testing.T) {
 		outfp += "." + outputPathParts[i]
 	}
 	outfp += "_ead_consequences.shp"
-	sw, err := consequences.InitShpResultsWriter(outfp, "EADResults") //swap to geopackage.
+	sw, err := gcrw.InitShpResultsWriter(outfp, "EADResults") //swap to geopackage.
 	if err != nil {
 		panic("error creating ead output")
 	}

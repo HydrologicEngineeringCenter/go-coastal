@@ -15,5 +15,4 @@ func main() {
 		fmt.Println(fmt.Sprintf("Computing EAD for %v using an iventory at path %v", hfp, sfp))
 		//compute.ExpectedAnnualDamagesGPK(hfp, sfp)
 	}
-
 }

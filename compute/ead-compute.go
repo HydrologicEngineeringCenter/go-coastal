@@ -10,6 +10,7 @@ import (
 	"github.com/USACE/go-consequences/compute"
 	"github.com/USACE/go-consequences/consequences"
 	"github.com/USACE/go-consequences/geography"
+	gcrw "github.com/USACE/go-consequences/resultswriters"
 	"github.com/USACE/go-consequences/structureprovider"
 	"github.com/USACE/go-consequences/structures"
 )
@@ -21,7 +22,7 @@ func ExpectedAnnualDamages(hazardfp string, inventoryfp string) {
 		outfp += "." + outputPathParts[i]
 	}
 	outfp += "_ead_consequences.json"
-	sw, err := consequences.InitGeoJsonResultsWriterFromFile(outfp)
+	sw, err := gcrw.InitGeoJsonResultsWriterFromFile(outfp)
 	if err != nil {
 		panic("error creating ead output")
 	}
@@ -293,7 +294,7 @@ func ExpectedAnnualDamagesGPK_WithWAVE(grdfp string, swlfp string, hmo string, i
 		outfp += "." + outputPathParts[i]
 	}
 	outfp += "_ead_consequences.gpkg"
-	sw, err := consequences.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
+	sw, err := gcrw.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
 	if err != nil {
 		panic("error creating ead output")
 	}
@@ -380,7 +381,7 @@ func ExpectedAnnualDamages_OSEOutput(hazardfp string, inventoryfp string) {
 	}
 	defer ose_sw.Close()
 	out3fp += "_ead_consequences.gpkg"
-	sw3, err := consequences.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
+	sw3, err := gcrw.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
 	if err != nil {
 		panic("error creating ead output")
 	}
@@ -477,7 +478,7 @@ func ExpectedAnnualDamages_OSEOutput_CT(hazardfp string, inventoryfp string, fip
 	}
 	defer ose_sw.Close()
 	out3fp += "_" + fipscode + "_ead_consequences.gpkg"
-	sw3, err := consequences.InitGpkResultsWriter(out3fp, "EAD_RESULTS") //swap to geopackage.
+	sw3, err := gcrw.InitGpkResultsWriter(out3fp, "EAD_RESULTS") //swap to geopackage.
 	if err != nil {
 		panic("error creating ead output")
 	}
