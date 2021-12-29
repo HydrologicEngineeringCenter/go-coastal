@@ -1,6 +1,8 @@
 package geometry
 
-import "errors"
+import (
+	"errors"
+)
 
 type TriangleZZ struct {
 	p1     *PointZZ
