@@ -4,14 +4,14 @@ import (
 	"errors"
 )
 
-type TriangleZZ struct {
-	p1     *PointZZ
-	p2     *PointZZ
-	p3     *PointZZ
+type TriangleUncertainZZ struct {
+	p1     *PointUncertainZZ
+	p2     *PointUncertainZZ
+	p3     *PointUncertainZZ
 	extent Extent
 }
 
-func CreateTriangleZZ(a *PointZZ, b *PointZZ, c *PointZZ) TriangleZZ {
+func CreateTriangleUncertainZZ(a *PointUncertainZZ, b *PointUncertainZZ, c *PointUncertainZZ) TriangleUncertainZZ {
 	var minx, miny, maxx, maxy float64
 	minx = 180
 	miny = 180
@@ -54,28 +54,28 @@ func CreateTriangleZZ(a *PointZZ, b *PointZZ, c *PointZZ) TriangleZZ {
 		miny = c.Y
 	}
 	e := Extent{LowerLeft: Point{X: minx, Y: miny}, UpperRight: Point{X: maxx, Y: maxy}}
-	return TriangleZZ{p1: a, p2: b, p3: c, extent: e}
+	return TriangleUncertainZZ{p1: a, p2: b, p3: c, extent: e}
 }
 
 //https://codeplea.com/triangular-interpolation
-func (t TriangleZZ) GetValue(x float64, y float64, zidx int) (float64, float64, error) {
+func (t TriangleUncertainZZ) GetValue(x float64, y float64, zidx int, prob float64) (float64, float64, error) {
 	invDenom := 1 / ((t.p2.Y-t.p3.Y)*(t.p1.X-t.p3.X) + (t.p3.X-t.p2.X)*(t.p1.Y-t.p3.Y))
 	w1 := ((t.p2.Y-t.p3.Y)*(x-t.p3.X) + (t.p3.X-t.p2.X)*(y-t.p3.Y)) * invDenom
 	w2 := ((t.p3.Y-t.p1.Y)*(x-t.p3.X) + (t.p1.X-t.p3.X)*(y-t.p3.Y)) * invDenom
 	w3 := 1.0 - w1 - w2
 	if w1 >= 0 && w2 >= 0 && w3 >= 0 {
-		return (w1*t.p1.ZSwl[zidx] + w2*t.p2.ZSwl[zidx] + w3*t.p3.ZSwl[zidx]), (w1*t.p1.ZHm0[zidx] + w2*t.p2.ZHm0[zidx] + w3*t.p3.ZHm0[zidx]), nil
+		return (w1*t.p1.ZSwl[zidx].InverseCDF(prob) + w2*t.p2.ZSwl[zidx].InverseCDF(prob) + w3*t.p3.ZSwl[zidx].InverseCDF(prob)), (w1*t.p1.ZHm0[zidx].InverseCDF(prob) + w2*t.p2.ZHm0[zidx].InverseCDF(prob) + w3*t.p3.ZHm0[zidx].InverseCDF(prob)), nil
 	}
 	return -9999, -9999, errors.New("Point Outside Triangle")
 }
-func (t TriangleZZ) GetValues(x float64, y float64) ([]float64, []float64, error) {
+func (t TriangleUncertainZZ) GetValues(x float64, y float64) ([]statistics.ContinuousDistribution, []statistics.ContinuousDistribution, error) {
 	invDenom := 1 / ((t.p2.Y-t.p3.Y)*(t.p1.X-t.p3.X) + (t.p3.X-t.p2.X)*(t.p1.Y-t.p3.Y))
 	w1 := ((t.p2.Y-t.p3.Y)*(x-t.p3.X) + (t.p3.X-t.p2.X)*(y-t.p3.Y)) * invDenom
 	w2 := ((t.p3.Y-t.p1.Y)*(x-t.p3.X) + (t.p1.X-t.p3.X)*(y-t.p3.Y)) * invDenom
 	w3 := 1.0 - w1 - w2
 	lenz := len(t.p1.ZSwl)
-	vals := make([]float64, lenz)
-	hmos := make([]float64, lenz)
+	vals := make([]statistics.ContinuousDistribution, lenz)
+	hmos := make([]statistics.ContinuousDistribution, lenz)
 	if w1 >= 0 && w2 >= 0 && w3 >= 0 {
 		ele := (w1*t.p1.ZElev + w2*t.p2.ZElev + w3*t.p3.ZElev)
 		for i, z := range t.p1.ZSwl {
@@ -86,13 +86,13 @@ func (t TriangleZZ) GetValues(x float64, y float64) ([]float64, []float64, error
 		}
 		return vals, hmos, nil
 	}
-	return []float64{-9999}, []float64{-9999}, errors.New("Point Outside Triangle")
+	return vals, hmos, errors.New("Point Outside Triangle")
 }
 
-func (t *TriangleZZ) Extent() Extent {
+func (t *TriangleUncertainZZ) Extent() Extent {
 	return t.extent
 }
-func (t TriangleZZ) HasData() bool {
+func (t TriangleUncertainZZ) HasData() bool {
 	if len(t.p1.ZSwl) > 0 {
 		return true
 	}
@@ -104,6 +104,6 @@ func (t TriangleZZ) HasData() bool {
 	}
 	return false
 }
-func (t *TriangleZZ) Points() []float64 {
+func (t *TriangleUncertainZZ) Points() []float64 {
 	return []float64{t.p1.X, t.p1.Y, t.p2.X, t.p2.Y, t.p3.X, t.p3.Y}
 }
