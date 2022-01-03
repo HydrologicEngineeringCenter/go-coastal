@@ -16,7 +16,12 @@ type Point struct {
 	X float64
 	Y float64
 }
-
+type PointUncertainZZ struct {
+	*Point
+	ZSwl  []statistics.ContinuousDistribution
+	ZHm0  []statistics.ContinuousDistribution
+	ZElev float64
+}
 func (a Point) squaredDistance(b Point) float64 {
 	dx := a.X - b.X
 	dy := a.Y - b.Y
@@ -70,5 +75,24 @@ func (a PointZZ) ToXY() [2]float64 {
 	return [2]float64{a.X, a.Y}
 }
 func (a PointZZ) ToPoint() [2]float64 {
+	return [2]float64{a.X, a.Y}
+}
+func (a PointUncertainZZ) squaredDistance(b PointUncertainZZ) float64 {
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+	return dx*dx + dy*dy
+}
+
+func (a PointUncertainZZ) distance(b PointUncertainZZ) float64 {
+	return math.Hypot(a.X-b.X, a.Y-b.Y)
+}
+
+func (a PointUncertainZZ) sub(b PointUncertainZZ) Point {
+	return Point{X: a.X - b.X, Y: a.Y - b.Y}
+}
+func (a PointUncertainZZ) ToXY() [2]float64 {
+	return [2]float64{a.X, a.Y}
+}
+func (a PointUncertainZZ) ToPoint() [2]float64 {
 	return [2]float64{a.X, a.Y}
 }

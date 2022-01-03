@@ -39,9 +39,13 @@ type AcNode struct {
 	AdcircNode int32
 	ZHm0       []float64
 	ZSwl       []float64
+	ZHm0stdev       []float64
+	ZSwlstdev       []float64
 }
 
-func (an AcNode) PointZZ() geometry.PointZZ {
+func (an AcNode) PointZZ(prob float64) geometry.PointZZ {
+	swl_sn := statistics.Normal{Mean: an.ZSwl, StandardDeviation: an.ZSwlstdev}
+	swl_sn := statistics.Normal{Mean: an.ZSwl, StandardDeviation: an.ZSwlstdev}
 	return geometry.PointZZ{
 		Point: &geometry.Point{
 			X: an.Point.X,
@@ -183,6 +187,8 @@ type HdfAdcercHazardBuilder struct {
 	probabilites []float64
 	probHmo      *HdfDataset
 	probSwl      *HdfDataset
+	stdevHmo      *HdfDataset
+	stdevSwl      *HdfDataset
 }
 
 func (hzp *HdfAdcercHazardBuilder) buildTin() *geometry.Tin {
