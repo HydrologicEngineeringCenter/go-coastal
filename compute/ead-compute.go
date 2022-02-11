@@ -220,7 +220,7 @@ func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp str
 		outfp += "." + outputPathParts[i]
 	}
 	outfp += "_ead_consequences.gpkg"
-	sw, err := consequences.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
+	sw, err := gcrw.InitGpkResultsWriter(outfp, "EAD_RESULTS") //swap to geopackage.
 	if err != nil {
 		panic("error creating ead output")
 	}

@@ -1,7 +1,25 @@
 package geometry
 
-import "math"
+import (
+	"math"
 
+	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
+)
+
+type Parameter uint
+
+const (
+	Unassigned  Parameter = 0
+	Terrain     Parameter = 1
+	SWL         Parameter = 2
+	HM0         Parameter = 3
+	Distributed Parameter = 4
+)
+
+type PointWithPayload struct {
+	*Point
+	Data map[Parameter][]statistics.ContinuousDistribution
+}
 type PointZ struct {
 	*Point
 	Z []float64 //make a slice?
@@ -16,12 +34,7 @@ type Point struct {
 	X float64
 	Y float64
 }
-type PointUncertainZZ struct {
-	*Point
-	ZSwl  []statistics.ContinuousDistribution
-	ZHm0  []statistics.ContinuousDistribution
-	ZElev float64
-}
+
 func (a Point) squaredDistance(b Point) float64 {
 	dx := a.X - b.X
 	dy := a.Y - b.Y
@@ -58,6 +71,26 @@ func (a PointZ) ToPoint() [2]float64 {
 	return [2]float64{a.X, a.Y}
 }
 
+func (a PointWithPayload) squaredDistance(b PointWithPayload) float64 {
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+	return dx*dx + dy*dy
+}
+
+func (a PointWithPayload) distance(b PointWithPayload) float64 {
+	return math.Hypot(a.X-b.X, a.Y-b.Y)
+}
+
+func (a PointWithPayload) sub(b PointWithPayload) Point {
+	return Point{X: a.X - b.X, Y: a.Y - b.Y}
+}
+func (a PointWithPayload) ToXY() [2]float64 {
+	return [2]float64{a.X, a.Y}
+}
+func (a PointWithPayload) ToPoint() [2]float64 {
+	return [2]float64{a.X, a.Y}
+}
+
 func (a PointZZ) squaredDistance(b PointZZ) float64 {
 	dx := a.X - b.X
 	dy := a.Y - b.Y
@@ -75,24 +108,5 @@ func (a PointZZ) ToXY() [2]float64 {
 	return [2]float64{a.X, a.Y}
 }
 func (a PointZZ) ToPoint() [2]float64 {
-	return [2]float64{a.X, a.Y}
-}
-func (a PointUncertainZZ) squaredDistance(b PointUncertainZZ) float64 {
-	dx := a.X - b.X
-	dy := a.Y - b.Y
-	return dx*dx + dy*dy
-}
-
-func (a PointUncertainZZ) distance(b PointUncertainZZ) float64 {
-	return math.Hypot(a.X-b.X, a.Y-b.Y)
-}
-
-func (a PointUncertainZZ) sub(b PointUncertainZZ) Point {
-	return Point{X: a.X - b.X, Y: a.Y - b.Y}
-}
-func (a PointUncertainZZ) ToXY() [2]float64 {
-	return [2]float64{a.X, a.Y}
-}
-func (a PointUncertainZZ) ToPoint() [2]float64 {
 	return [2]float64{a.X, a.Y}
 }
