@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
+	"github.com/USACE/go-consequences/geography"
+	"github.com/USACE/go-consequences/hazardproviders"
+	"github.com/USACE/go-consequences/hazards"
 	"github.com/furstenheim/ConcaveHull"
 	"github.com/tidwall/rtree"
 )
@@ -21,28 +24,98 @@ type chrpsHazardProvider struct {
 	queryCount               int64
 	actualComputedStructures int64
 	computeStart             time.Time
-	elemFile                 string
 	gridFile                 string
 	eventFile                string
 }
 
-type node struct {
-	AdcircID  int     `json:"adcircId`
-	Latitude  float64 `json:"lat"`
-	Longitude float64 `json:"lon"`
-	Surge     float64 `json:"surge"`
+func (csv *chrpsHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
+	h := hazards.CoastalEvent{}
+	csv.queryCount++
+	//check if point is in the hull polygon.
+	p := geometry.Point{X: l.X, Y: l.Y}
+	if csv.queryCount%100000 == 0 {
+		n := time.Since(csv.computeStart)
+		fmt.Print("Compute Time: ")
+		fmt.Println(n)
+		fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))
+	}
+	if csv.ds.Hull.Contains(p) {
+		v, err := csv.ds.ComputeValue(l.X, l.Y)
+		if err != nil {
+			h.SetDepth(-9999.0)
+			return h, err
+		}
+		h.SetDepth(v)
+		h.SetSalinity(true)
+		csv.actualComputedStructures++
+		return h, nil
+	}
+	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
+	h.SetDepth(-9999.0)
+	return h, notIn
 }
+
+//implement
+func (csv *chrpsHazardProvider) ProvideHazards(l geography.Location) ([]hazards.HazardEvent, error) {
+	csv.queryCount++
+	//check if point is in the hull polygon.
+	p := geometry.Point{X: l.X, Y: l.Y}
+	if csv.queryCount%100000 == 0 {
+		n := time.Since(csv.computeStart)
+		fmt.Print("Compute Time: ")
+		fmt.Println(n)
+		fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))
+	}
+	if csv.ds.Hull.Contains(p) {
+		v, err := csv.ds.ComputeValues(l.X, l.Y)
+		if err != nil {
+			return nil, err
+		}
+		csv.actualComputedStructures++
+		return v, nil
+	}
+	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
+	return nil, notIn
+}
+
+//implement
+func (csv chrpsHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
+	bbox := make([]float64, 4)
+	bbox[0] = csv.ds.MinX //upper left x
+	bbox[1] = csv.ds.MaxY //upper left y
+	bbox[2] = csv.ds.MaxX //lower right x
+	bbox[3] = csv.ds.MinY //lower right y
+	return geography.BBox{Bbox: bbox}, nil
+}
+
+//implement
+func (csv *chrpsHazardProvider) Close() {
+	//do nothing?
+	n := time.Since(csv.computeStart)
+	fmt.Print("Compute Complete")
+	fmt.Print("Compute Time was: ")
+	fmt.Println(n)
+	fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", csv.queryCount, csv.actualComputedStructures))
+
+}
+
 type Event struct {
 	GPM      string      `json:"GPM"`
 	Response [][]float64 `json:"resp"`
 }
 
-func InitCHRPS(elemFile string, gridFile string, eventFile string) (chrpsHazardProvider, error) {
+func InitCHRPS(gridFile string, eventFile string) (chrpsHazardProvider, error) {
 	chp := chrpsHazardProvider{
-		elemFile:  elemFile,
-		gridFile:  gridFile,
-		eventFile: eventFile,
+		gridFile:                 gridFile,
+		eventFile:                eventFile,
+		actualComputedStructures: 0,
+		computeStart:             time.Now(),
 	}
+	ds, err := ReadCHRPS_GRD_Event(gridFile, eventFile)
+	if err != nil {
+		panic(err)
+	}
+	chp.ds = ds
 	return chp, nil
 }
 func ReadCHRPS_GRD_Event(grdfp string, eventFile string) (*geometry.Tin, error) {
@@ -120,7 +193,7 @@ func ReadCHRPS_GRD_Event(grdfp string, eventFile string) (*geometry.Tin, error) 
 					panic(err)
 				}
 				e := Event{}
-				err = json.Unmarshal(eventbytes, e)
+				err = json.Unmarshal(eventbytes, &e)
 				if err != nil {
 					panic(err)
 				}
