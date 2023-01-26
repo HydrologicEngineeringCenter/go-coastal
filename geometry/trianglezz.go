@@ -57,7 +57,7 @@ func CreateTriangleZZ(a *PointZZ, b *PointZZ, c *PointZZ) TriangleZZ {
 	return TriangleZZ{p1: a, p2: b, p3: c, extent: e}
 }
 
-//https://codeplea.com/triangular-interpolation
+// https://codeplea.com/triangular-interpolation
 func (t TriangleZZ) GetValue(x float64, y float64, zidx int) (float64, float64, error) {
 	invDenom := 1 / ((t.p2.Y-t.p3.Y)*(t.p1.X-t.p3.X) + (t.p3.X-t.p2.X)*(t.p1.Y-t.p3.Y))
 	w1 := ((t.p2.Y-t.p3.Y)*(x-t.p3.X) + (t.p3.X-t.p2.X)*(y-t.p3.Y)) * invDenom
@@ -79,6 +79,12 @@ func (t TriangleZZ) GetValues(x float64, y float64) ([]float64, []float64, error
 	if w1 >= 0 && w2 >= 0 && w3 >= 0 {
 		ele := (w1*t.p1.ZElev + w2*t.p2.ZElev + w3*t.p3.ZElev)
 		for i, z := range t.p1.ZSwl {
+			if len(t.p2.ZSwl) == 0 {
+				return nil, nil, errors.New("Not all points have data")
+			}
+			if len(t.p3.ZSwl) == 0 {
+				return nil, nil, errors.New("Not all points have data")
+			}
 			swl := (w1*z + w2*t.p2.ZSwl[i] + w3*t.p3.ZSwl[i])
 			//should i do data checks on ele?
 			vals[i] = swl - ele

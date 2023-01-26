@@ -27,8 +27,12 @@ func Test_CHRPS_Compute(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	nsp := structureprovider.InitNSISP()
+	nsp, err := structureprovider.InitGPK("/workspaces/go-coastal/data/nsi.gpkg", "nsi")
+	if err != nil {
+		panic(err)
+	}
 	w, _ := resultswriters.InitGeoJsonResultsWriterFromFile(root + "_consequences.json")
+	defer w.Close()
 	fmt.Println("Getting bbox")
 	bbox, err := hp.ProvideHazardBoundary()
 	if err != nil {
