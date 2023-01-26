@@ -26,6 +26,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone &
     ./configure --prefix=/hdf --enable-shared --enable-ros3-vfd --enable-threadsafe --disable-hl &&\
     make &&\
     make install
-    cd ../ &&\
-    cd /workspaces &&\
-    git clone https://github.com/USACE/go-hdf5
+    ##&&\
+    ##cd ../ &&\
+    ##cd /workspaces &&\
+    ##git clone https://github.com/USACE/go-hdf5
