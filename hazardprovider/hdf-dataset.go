@@ -3,7 +3,6 @@ package hazardprovider
 import (
 	"errors"
 	"log"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -16,24 +15,24 @@ func OpenFile(filepath string) (*hdf5.File, error) {
 	var f *hdf5.File
 	var err error
 
-	url := strings.ToLower(filepath)
-	if strings.HasPrefix(url, "https") {
+	/*	url := strings.ToLower(filepath)
+		if strings.HasPrefix(url, "https") {
 
-		fapl_id, _ := hdf5.NewPropList(hdf5.P_FILE_ACCESS)
+			fapl_id, _ := hdf5.NewPropList(hdf5.P_FILE_ACCESS)
 
-		ros3_fa := hdf5.H5FD_ROS3_FAPL{
-			Version:               1,
-			Authenticate:          true,
-			AWS_REGION:            os.Getenv("AWS_REGION"),
-			AWS_ACCESS_KEY_ID:     os.Getenv("AWS_ACCESS_KEY_ID"),
-			AWS_SECRET_ACCESS_KEY: os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		}
+			ros3_fa := hdf5.H5FD_ROS3_FAPL{
+				Version:               1,
+				Authenticate:          true,
+				AWS_REGION:            os.Getenv("AWS_REGION"),
+				AWS_ACCESS_KEY_ID:     os.Getenv("AWS_ACCESS_KEY_ID"),
+				AWS_SECRET_ACCESS_KEY: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			}
 
-		hdf5.H5PsetFaplRos3d(fapl_id, ros3_fa)
-		f, err = hdf5.OpenFileWithProp(url, hdf5.F_ACC_RDONLY, fapl_id)
-	} else {
-		f, err = hdf5.OpenFile(filepath, hdf5.F_ACC_RDONLY)
-	}
+			hdf5.H5PsetFaplRos3d(fapl_id, ros3_fa)
+			f, err = hdf5.OpenFileWithProp(url, hdf5.F_ACC_RDONLY, fapl_id)
+		} else { */
+	f, err = hdf5.OpenFile(filepath, hdf5.F_ACC_RDONLY)
+	//}
 	return f, err
 
 }

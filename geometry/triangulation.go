@@ -149,5 +149,8 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 		}
 		hs = append(hs, h)
 	}
+	if len(hs) == 0 {
+		return nil, errors.New("no data found")
+	}
 	return hs, err
 }

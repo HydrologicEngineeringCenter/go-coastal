@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/geometry"
+	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 	"github.com/USACE/go-consequences/geography"
 	"github.com/USACE/go-consequences/hazardproviders"
 	"github.com/USACE/go-consequences/hazards"
@@ -39,17 +40,34 @@ type AcNode struct {
 	AdcircNode int32
 	ZHm0       []float64
 	ZSwl       []float64
+	ZHm0stdev  []float64
+	ZSwlstdev  []float64
 }
 
-func (an AcNode) PointZZ() geometry.PointZZ {
-	return geometry.PointZZ{
+func (an AcNode) PointWithPayload() geometry.PointWithPayload {
+	data := make(map[geometry.Parameter][]statistics.ContinuousDistribution)
+	ele := make([]statistics.ContinuousDistribution, 1)
+	dist, err := statistics.InitDeterministic(an.Point.Z)
+	if err != nil {
+		//panic?
+		log.Print("bummer.")
+	}
+	ele[0] = dist
+	data[geometry.Terrain] = ele
+	swldists := make([]statistics.ContinuousDistribution, len(an.ZHm0))
+	hmodists := make([]statistics.ContinuousDistribution, len(an.ZHm0))
+	for idx, _ := range an.ZHm0 {
+		swldists[idx] = statistics.NormalDistribution{Mean: an.ZSwl[idx], StandardDeviation: an.ZSwlstdev[idx]}
+		hmodists[idx] = statistics.NormalDistribution{Mean: an.ZHm0[idx], StandardDeviation: an.ZHm0stdev[idx]}
+	}
+	data[geometry.SWL] = swldists
+	data[geometry.HM0] = hmodists
+	return geometry.PointWithPayload{
 		Point: &geometry.Point{
 			X: an.Point.X,
 			Y: an.Point.Y,
 		},
-		ZSwl:  an.ZSwl,
-		ZHm0:  an.ZHm0,
-		ZElev: an.Point.Z,
+		Data: data,
 	}
 }
 
@@ -64,11 +82,11 @@ type AcTriangle struct {
 	LrbLon    float64
 }
 
-func (at AcTriangle) TriangleZZ(nodes map[int32]AcNode) geometry.TriangleZZ {
-	n1 := nodes[at.NodeA].PointZZ()
-	n2 := nodes[at.NodeB].PointZZ()
-	n3 := nodes[at.NodeC].PointZZ()
-	return geometry.CreateTriangleZZ(&n1, &n2, &n3)
+func (at AcTriangle) TriangleWithPayload(nodes map[int32]AcNode) geometry.TriangleWithPayload {
+	n1 := nodes[at.NodeA].PointWithPayload()
+	n2 := nodes[at.NodeB].PointWithPayload()
+	n3 := nodes[at.NodeC].PointWithPayload()
+	return geometry.CreateTriangleWithPayload(&n1, &n2, &n3)
 }
 
 type AcPoint struct {
@@ -183,6 +201,8 @@ type HdfAdcercHazardBuilder struct {
 	probabilites []float64
 	probHmo      *HdfDataset
 	probSwl      *HdfDataset
+	stdevHmo     *HdfDataset
+	stdevSwl     *HdfDataset
 }
 
 func (hzp *HdfAdcercHazardBuilder) buildTin() *geometry.Tin {
@@ -196,7 +216,7 @@ func (hzp *HdfAdcercHazardBuilder) buildTin() *geometry.Tin {
 	kept := 0
 	culled := 0
 	for _, t := range hzp.triangles {
-		triangle := t.TriangleZZ(hzp.nodes)
+		triangle := t.TriangleWithPayload(hzp.nodes)
 		if triangle.HasData() {
 			e := triangle.Extent()
 			tr.Insert(e.LowerLeft.ToXY(), e.UpperRight.ToXY(), triangle)
