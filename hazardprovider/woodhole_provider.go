@@ -20,6 +20,7 @@ type WoodHoleGroupTif struct {
 }
 
 func InitWoodHoleGroupTif(wsefilepath string, wavefilepath string) WoodHoleGroupTif {
+	//check input projection and reproject to wgs84?
 	whgt := WoodHoleGroupTif{
 		WSEFilePath:  wsefilepath,
 		WSE:          nil,
