@@ -62,7 +62,7 @@ func normalizeWSEValues(input float64) float64 {
 	case 9997:
 		return 0.0 //depth or wse?
 	case 9998:
-		panic(errors.New("arrrrgggg!"))
+		panic(errors.New("arrrrgggg wse"))
 	case 9999:
 		return 1.0 //depth or wse?
 	}
@@ -72,10 +72,8 @@ func normalizeWaveValues(input float64) float64 {
 	switch input {
 	case 9997:
 		return 0 //does this input ever happen in wave?
-		break
 	case 9998:
-		panic(errors.New("arrrrgggg!"))
-		break
+		panic(errors.New("arrrrgggg wave"))
 	case 9999:
 		return 0 //does this happen in the wave files?
 	}
