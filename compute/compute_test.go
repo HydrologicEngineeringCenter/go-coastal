@@ -6,6 +6,7 @@ import (
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
 	gcrw "github.com/USACE/go-consequences/resultswriters"
+	"github.com/USACE/go-consequences/structureprovider"
 )
 
 func Test_Event(t *testing.T) {
@@ -36,7 +37,7 @@ func Test_EAD_resultsWriter(t *testing.T) {
 	ExpectedAnnualDamages_ResultsWriter(hp, sp, sw)
 }
 
-//@TODO:export this as a c function
+// @TODO:export this as a c function
 func Test_EADGpk_WithWaves(t *testing.T) {
 	fp := "/Working/hec/go-coastal/data/NAC2014_R01_ClosedRivers.grd"
 	swlp := "/Working/hec/go-coastal/data/NACS_Nantucket_PCHA_SLC0_SWL_BE_v20210722.csv"
@@ -63,4 +64,25 @@ func Test_EAD_OSE_CT(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
 	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
 	ExpectedAnnualDamages_OSEOutput_CT(hp, sp, "12086008900")
+}
+
+func Test_WoodHole_Event(t *testing.T) {
+
+	wsefp := "/workspaces/go-coastal/data/woodhole/20 Year 2030_wgs84.tif"
+	wavefp := "/workspaces/go-coastal/data/woodhole/20 Year 2030 waves_wgs84.tif"
+	spfp := "/workspaces/go-coastal/data/nsi.gpkg"
+	rwfp := "/workspaces/go-coastal/wh_2030_20Y.gpkg"
+	hp := hazardprovider.InitWoodHoleGroupTif(wsefp, wavefp)
+	defer hp.Close()
+	sp, err := structureprovider.InitGPK(spfp, "nsi")
+	defer hp.Close()
+	if err != nil {
+		panic("error creating inventory provider")
+	}
+	rw, err := gcrw.InitGpkResultsWriter(rwfp, "results")
+	defer rw.Close()
+	if err != nil {
+		panic("error creating results writer")
+	}
+	WoodHoleEvent(hp, sp, rw)
 }

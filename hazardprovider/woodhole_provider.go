@@ -90,7 +90,7 @@ func (whgt WoodHoleGroupTif) ProvideHazardBoundary() (geography.BBox, error) {
 }
 
 // implement
-func (whgt *WoodHoleGroupTif) Close() {
+func (whgt WoodHoleGroupTif) Close() {
 	//do nothing?
 	whgt.WSE.Close()
 	whgt.Wave.Close()
