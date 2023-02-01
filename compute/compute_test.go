@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
+	"github.com/USACE/go-consequences/hazardproviders"
 	gcrw "github.com/USACE/go-consequences/resultswriters"
 	"github.com/USACE/go-consequences/structureprovider"
 )
@@ -71,7 +72,7 @@ func Test_WoodHole_Event(t *testing.T) {
 	wsefp := "/workspaces/go-coastal/data/woodhole/20 Year 2030_wgs84.tif"
 	wavefp := "/workspaces/go-coastal/data/woodhole/20 Year 2030 waves_wgs84.tif"
 	spfp := "/workspaces/go-coastal/data/nsi.gpkg"
-	rwfp := "/workspaces/go-coastal/wh_2030_20Y.gpkg"
+	rwfp := "/workspaces/go-coastal/data/woodhole/wh_2030_20Y.gpkg"
 	hp := hazardprovider.InitWoodHoleGroupTif(wsefp, wavefp)
 	defer hp.Close()
 	sp, err := structureprovider.InitGPK(spfp, "nsi")
@@ -80,9 +81,46 @@ func Test_WoodHole_Event(t *testing.T) {
 		panic("error creating inventory provider")
 	}
 	rw, err := gcrw.InitGpkResultsWriter(rwfp, "results")
+	if err != nil {
+		panic("error creating results writer")
+	}
 	defer rw.Close()
 	if err != nil {
 		panic("error creating results writer")
 	}
 	WoodHoleEvent(hp, sp, rw)
+}
+
+func Test_WoodHole_EAD(t *testing.T) {
+
+	wsefp := []string{
+		"/workspaces/go-coastal/data/woodhole/20 Year 2030_wgs84.tif",
+	}
+	wavefp := []string{
+		"/workspaces/go-coastal/data/woodhole/20 Year 2030 waves_wgs84.tif",
+	}
+	frequencies := []float64{
+		1.0 / 20.0,
+	}
+	spfp := "/workspaces/go-coastal/data/nsi.gpkg"
+	rwfp := "/workspaces/go-coastal/data/woodhole/wh_EAD.gpkg"
+	hps := make([]hazardproviders.HazardProvider, len(wsefp))
+	for idx, wse := range wsefp {
+		hp := hazardprovider.InitWoodHoleGroupTif(wse, wavefp[idx])
+		hps[idx] = hp
+	}
+	sp, err := structureprovider.InitGPK(spfp, "nsi")
+	if err != nil {
+		panic("error creating inventory provider")
+	}
+	sp.SetDeterministic(true)
+	rw, err := gcrw.InitGpkResultsWriter(rwfp, "EAD results")
+	if err != nil {
+		panic("error creating results writer")
+	}
+	defer rw.Close()
+	if err != nil {
+		panic("error creating results writer")
+	}
+	WoodHoleDeterministicEAD(hps, frequencies, sp, rw)
 }

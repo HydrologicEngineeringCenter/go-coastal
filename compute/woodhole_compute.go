@@ -52,7 +52,9 @@ func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies 
 		sdamages := make([]float64, len(frequencies))
 		cdamages := make([]float64, len(frequencies))
 		s, sdok := f.(structures.StructureDeterministic)
+		//s.SampleStructure()
 		if sdok {
+			hasLoss := false
 			for idx, _ := range frequencies {
 				if idx == 0 {
 					ret.Result[0] = s.BaseStructure.Name
@@ -70,6 +72,7 @@ func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies 
 				d, err2 := hps[idx].ProvideHazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
 				//compute damages based on hazard being able to provide a hazard.
 				if err2 == nil {
+					hasLoss = true
 					r, err := s.Compute(d)
 					if err == nil {
 						rs, err := r.Fetch("structure damage")
@@ -89,11 +92,14 @@ func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies 
 					cdamages[idx] = 0.0
 				}
 			}
-			sead := compute.ComputeSpecialEAD(sdamages, frequencies)
-			cead := compute.ComputeSpecialEAD(cdamages, frequencies)
-			ret.Result[5] = sead
-			ret.Result[6] = cead
-			rw.Write(ret)
+			if hasLoss {
+				sead := compute.ComputeSpecialEAD(sdamages, frequencies)
+				cead := compute.ComputeSpecialEAD(cdamages, frequencies)
+				ret.Result[5] = sead
+				ret.Result[6] = cead
+				rw.Write(ret)
+			}
+
 		}
 
 	})
