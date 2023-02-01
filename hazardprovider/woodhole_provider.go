@@ -1,6 +1,8 @@
 package hazardprovider
 
 import (
+	"errors"
+
 	"github.com/USACE/go-consequences/geography"
 	"github.com/USACE/go-consequences/hazardproviders"
 	"github.com/USACE/go-consequences/hazards"
@@ -47,17 +49,38 @@ func (whgt WoodHoleGroupTif) ProvideHazard(l geography.Location) (hazards.Hazard
 	if err != nil {
 		return c, err
 	}
-	c.SetDepth(d.Depth()) //need to pull ground elevation off
-	//check case for 9997,9998, 9999
+	c.SetDepth(normalizeWSEValues(d.Depth())) //need to pull ground elevation off
 	w, err := whgt.Wave.ProvideHazard(l)
 	if err != nil {
 		return c, err
 	}
-	c.SetWaveHeight(w.WaveHeight()) //any actions here? should i reduce it by .7?
-	//check for 9997,9998,9999
+	c.SetWaveHeight(normalizeWaveValues(w.WaveHeight())) //any actions here? should i reduce it by .7?
 	return c, nil
 }
-
+func normalizeWSEValues(input float64) float64 {
+	switch input {
+	case 9997:
+		return 0.0 //depth or wse?
+	case 9998:
+		panic(errors.New("arrrrgggg!"))
+	case 9999:
+		return 1.0 //depth or wse?
+	}
+	return input
+}
+func normalizeWaveValues(input float64) float64 {
+	switch input {
+	case 9997:
+		return 0 //does this input ever happen in wave?
+		break
+	case 9998:
+		panic(errors.New("arrrrgggg!"))
+		break
+	case 9999:
+		return 0 //does this happen in the wave files?
+	}
+	return input //could multiply by .7?
+}
 func (whgt WoodHoleGroupTif) ProvideHazardBoundary() (geography.BBox, error) {
 	return whgt.Wave.ProvideHazardBoundary()
 }
