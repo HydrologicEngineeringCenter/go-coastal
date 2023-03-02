@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/HydrologicEngineeringCenter/go-coastal/hazardprovider"
+	"github.com/HydrologicEngineeringCenter/go-coastal/resultswriters"
 	"github.com/USACE/go-consequences/hazardproviders"
 	gcrw "github.com/USACE/go-consequences/resultswriters"
 	"github.com/USACE/go-consequences/structureprovider"
@@ -95,12 +96,27 @@ func Test_WoodHole_EAD(t *testing.T) {
 
 	wsefp := []string{
 		"/workspaces/go-coastal/data/woodhole/20 Year 2030_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/50 Year 2030_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/100 Year 2030_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/200 Year 2030_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/500 Year 2030_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/1000 Year 2030_wgs84.tif",
 	}
 	wavefp := []string{
 		"/workspaces/go-coastal/data/woodhole/20 Year 2030 waves_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/50 Year 2030 waves_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/100 Year 2030 waves_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/200 Year 2030 waves_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/500 Year 2030 waves_wgs84.tif",
+		"/workspaces/go-coastal/data/woodhole/1000 Year 2030 waves_wgs84.tif",
 	}
 	frequencies := []float64{
 		1.0 / 20.0,
+		1.0 / 50.0,
+		1.0 / 100.0,
+		1.0 / 200.0,
+		1.0 / 500.0,
+		1.0 / 1000.0,
 	}
 	spfp := "/workspaces/go-coastal/data/nsi.gpkg"
 	rwfp := "/workspaces/go-coastal/data/woodhole/wh_EAD.gpkg"
@@ -114,7 +130,9 @@ func Test_WoodHole_EAD(t *testing.T) {
 		panic("error creating inventory provider")
 	}
 	sp.SetDeterministic(true)
-	rw, err := gcrw.InitGpkResultsWriter(rwfp, "EAD results")
+	//rw, err := gcrw.InitGpkResultsWriter(rwfp, "EAD results")
+	rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, frequencies)
+	defer rw.Close()
 	if err != nil {
 		panic("error creating results writer")
 	}
