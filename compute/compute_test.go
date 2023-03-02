@@ -132,7 +132,7 @@ func Test_WoodHole_EAD(t *testing.T) {
 	sp.SetDeterministic(true)
 	//rw, err := gcrw.InitGpkResultsWriter(rwfp, "EAD results")
 	rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, frequencies)
-	defer rw.Close()
+
 	if err != nil {
 		panic("error creating results writer")
 	}

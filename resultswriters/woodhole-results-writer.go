@@ -8,6 +8,7 @@ import (
 
 	"github.com/USACE/go-consequences/compute"
 	"github.com/USACE/go-consequences/consequences"
+	"github.com/USACE/go-consequences/hazards"
 	"github.com/dewberry/gdal"
 )
 
@@ -26,6 +27,7 @@ type woodHoleStructureResult struct {
 	OccType          string
 	DamCat           string
 	Depths           []float64
+	Waves            []float64
 	StructureDamages []float64
 	ContentDamages   []float64
 }
@@ -74,6 +76,7 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64) (
 			sd := fmt.Sprintf("%v_%v_dam", s, "s") //s for structure c for content
 			cd := fmt.Sprintf("%v_%v_dam", s, "c")
 			d := fmt.Sprintf("%v_depth", s)
+			w := fmt.Sprintf("%v_wave", s)
 			//fmt.Println(s)
 			fieldDefsd := gdal.CreateFieldDefinition(sd, gdal.FT_Real)
 			defer fieldDefsd.Destroy()
@@ -84,11 +87,14 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64) (
 			fieldDefd := gdal.CreateFieldDefinition(d, gdal.FT_Real)
 			defer fieldDefd.Destroy()
 			newLayer.CreateField(fieldDefd, true)
+			fieldDefw := gdal.CreateFieldDefinition(w, gdal.FT_Real)
+			defer fieldDefw.Destroy()
+			newLayer.CreateField(fieldDefw, true)
 		}
-		fieldDefsead := gdal.CreateFieldDefinition("s_EAD", gdal.FT_String)
+		fieldDefsead := gdal.CreateFieldDefinition("s_EAD", gdal.FT_Real)
 		defer fieldDefsead.Destroy()
 		newLayer.CreateField(fieldDefsead, true)
-		fieldDefcead := gdal.CreateFieldDefinition("c_EAD", gdal.FT_String)
+		fieldDefcead := gdal.CreateFieldDefinition("c_EAD", gdal.FT_Real)
 		defer fieldDefcead.Destroy()
 		newLayer.CreateField(fieldDefcead, true)
 	}()
@@ -118,14 +124,26 @@ func (srw *WoodHoleResultsWriter) Write(r consequences.Result) {
 		}
 		occtype := ot.(string)
 		//grab x and y
+		xi, err := r.Fetch("x")
+		if err != nil {
+			//painic?
+		}
+		x := xi.(float64)
+		yi, err := r.Fetch("y")
+		if err != nil {
+			//painic?
+		}
+		y := yi.(float64)
 		wsr = woodHoleStructureResult{
 			Name:             name,
 			OccType:          occtype,
-			x:                0.0,
-			y:                0.0,
+			x:                x,
+			y:                y,
 			DamCat:           damcat,
 			StructureDamages: make([]float64, len(srw.frequencies)),
 			ContentDamages:   make([]float64, len(srw.frequencies)),
+			Depths:           make([]float64, len(srw.frequencies)),
+			Waves:            make([]float64, len(srw.frequencies)),
 		}
 	}
 	wsr.updateDamageInfo(r, srw)
@@ -146,15 +164,26 @@ func (whsr *woodHoleStructureResult) updateDamageInfo(r consequences.Result, whr
 	}
 	cdam := cd.(float64)
 	whsr.ContentDamages[whrw.currentFrequency] = cdam
+	d, err := r.Fetch("hazard")
+	if err != nil {
+		//painic?
+	}
+	ce := d.(hazards.CoastalEvent)
+	whsr.Depths[whrw.currentFrequency] = ce.Depth()
+	whsr.Waves[whrw.currentFrequency] = ce.WaveHeight()
 }
 func (srw *WoodHoleResultsWriter) Close() {
 	layerDef := srw.Layer.Definition()
-	feature := layerDef.Create()
+
 	//defer feature.Destroy()
 	pointIndex := 0
 	//rows
+
 	for _, r := range srw.results {
-		feature.SetFieldInteger(0, pointIndex)
+		feature := layerDef.Create()
+		defer feature.Destroy()
+		fidx := layerDef.FieldIndex("objectid")
+		feature.SetFieldInteger(fidx, pointIndex)
 		g := gdal.Create(gdal.GT_Point)
 		g.SetPoint(0, r.x, r.y, 0)
 		feature.SetGeometryDirectly(g)
@@ -186,6 +215,9 @@ func (srw *WoodHoleResultsWriter) Close() {
 			d := fmt.Sprintf("%v_depth", s)
 			didx := layerDef.FieldIndex(d)
 			feature.SetFieldFloat64(didx, r.Depths[i])
+			w := fmt.Sprintf("%v_wave", s)
+			widx := layerDef.FieldIndex(w)
+			feature.SetFieldFloat64(widx, r.Waves[i])
 			//fmt.Println(s)
 
 		}
