@@ -1,7 +1,6 @@
 package compute
 
 import (
-	"math"
 	"strings"
 	"testing"
 
@@ -132,10 +131,9 @@ func Test_WoodHole_EAD(t *testing.T) {
 	}
 	sp.SetDeterministic(true)
 	//rw, err := gcrw.InitGpkResultsWriter(rwfp, "EAD results")
-	numYearsInFuture := 0
 	rate := .025
-	discountFactor := 1 / (math.Pow(1+rate, float64(numYearsInFuture))) //calcuation of a discount factor basising on 1 dollar to create a multiplier.
-	rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, frequencies, discountFactor)
+	numYearsInFuture := 0
+	rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, frequencies, CreateDiscountFactor(rate, numYearsInFuture))
 
 	if err != nil {
 		panic("error creating results writer")
