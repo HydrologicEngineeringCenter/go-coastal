@@ -19,6 +19,7 @@ type WoodHoleResultsWriter struct {
 	Layer            *gdal.Layer
 	ds               *gdal.DataSource
 	currentFrequency int
+	discountFactor   float64
 }
 type woodHoleStructureResult struct {
 	Name             string
@@ -32,7 +33,7 @@ type woodHoleStructureResult struct {
 	ContentDamages   []float64
 }
 
-func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64) (*WoodHoleResultsWriter, error) {
+func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, discountFactor float64) (*WoodHoleResultsWriter, error) {
 	//make the maps
 	t := make(map[string]woodHoleStructureResult, 1)
 	//create the geopackage
@@ -91,15 +92,21 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64) (
 			defer fieldDefw.Destroy()
 			newLayer.CreateField(fieldDefw, true)
 		}
-		fieldDefsead := gdal.CreateFieldDefinition("s_EAD", gdal.FT_Real)
+		fieldDefsead := gdal.CreateFieldDefinition("s_Real_EAD", gdal.FT_Real)
 		defer fieldDefsead.Destroy()
 		newLayer.CreateField(fieldDefsead, true)
-		fieldDefcead := gdal.CreateFieldDefinition("c_EAD", gdal.FT_Real)
+		fieldDefcead := gdal.CreateFieldDefinition("c_Real_EAD", gdal.FT_Real)
 		defer fieldDefcead.Destroy()
 		newLayer.CreateField(fieldDefcead, true)
+		fieldDefasead := gdal.CreateFieldDefinition("s_Adj_EAD", gdal.FT_Real)
+		defer fieldDefasead.Destroy()
+		newLayer.CreateField(fieldDefasead, true)
+		fieldDefacead := gdal.CreateFieldDefinition("c_Adj_EAD", gdal.FT_Real)
+		defer fieldDefacead.Destroy()
+		newLayer.CreateField(fieldDefacead, true)
 	}()
 	newLayer.StartTransaction()
-	return &WoodHoleResultsWriter{filepath: filepath, results: t, frequencies: frequencies, Layer: &newLayer, ds: &dsOut}, nil
+	return &WoodHoleResultsWriter{filepath: filepath, results: t, frequencies: frequencies, Layer: &newLayer, ds: &dsOut, discountFactor: discountFactor}, nil
 }
 func (srw *WoodHoleResultsWriter) UpdateFrequencyIndex(i int) {
 	srw.currentFrequency = i
@@ -223,12 +230,21 @@ func (srw *WoodHoleResultsWriter) Close() {
 		}
 		//c_EAD, s_EAD
 		cead := compute.ComputeSpecialEAD(r.ContentDamages, srw.frequencies)
-		ceadidx := layerDef.FieldIndex("c_EAD")
+		ceadidx := layerDef.FieldIndex("c_Real_EAD")
 		feature.SetFieldFloat64(ceadidx, cead)
 
 		sead := compute.ComputeSpecialEAD(r.StructureDamages, srw.frequencies)
-		seadidx := layerDef.FieldIndex("s_EAD")
+		seadidx := layerDef.FieldIndex("s_Real_ EAD")
 		feature.SetFieldFloat64(seadidx, sead)
+
+		acead := cead * srw.discountFactor
+		aceadidx := layerDef.FieldIndex("c_Adj_EAD")
+		feature.SetFieldFloat64(aceadidx, acead)
+
+		asead := sead * srw.discountFactor
+		aseadidx := layerDef.FieldIndex("s_Adj_ EAD")
+		feature.SetFieldFloat64(aseadidx, asead)
+
 		err := srw.Layer.Create(feature)
 		if err != nil {
 			fmt.Println(err)

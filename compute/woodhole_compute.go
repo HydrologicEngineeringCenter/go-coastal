@@ -12,6 +12,24 @@ import (
 	"github.com/USACE/go-consequences/structures"
 )
 
+type WoodHoleSimulationSummary struct {
+	DataSets        []WoodHoleFrequencyDataset
+	DiscountRate    float64
+	InventoryPath   string
+	OutputDirectory string //do a ead output per dataset and another one with discounted values and computed EEAD
+	//terrain path?
+	//occtype definitions?
+	//life loss parameters?
+
+}
+type WoodHoleFrequencyDataset struct {
+	Year                  int
+	WaterSurfaceGridPaths []string
+	//uncertainty data??
+	WavePaths   []string
+	Frequencies []float64
+}
+
 func WoodHoleEvent(hp hazardproviders.HazardProvider, sp consequences.StreamProvider, rw consequences.ResultsWriter) {
 	fmt.Println("Getting bbox")
 	bbox, err := hp.ProvideHazardBoundary()
@@ -55,14 +73,18 @@ func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies 
 				d, err2 := hps[idx].ProvideHazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
 				//compute damages based on hazard being able to provide a hazard.
 				c := d.(hazards.CoastalEvent)
-				c.SetDepth(c.Depth() - s.GroundElevation) //set ground elevation on structures in go consequences, and pull from it to convert to depth... annoying.
-				if err2 == nil {
-					//hasLoss = true
-					r, err := s.Compute(d)
-					if err == nil {
-						rw.Write(r)
+				depth := c.Depth() - s.GroundElevation
+				if depth > 0 {
+					c.SetDepth(depth) //set ground elevation on structures in go consequences, and pull from it to convert to depth... annoying.
+					if err2 == nil {
+						//hasLoss = true
+						r, err := s.Compute(d)
+						if err == nil {
+							rw.Write(r)
+						}
 					}
 				}
+
 			}
 		}
 
