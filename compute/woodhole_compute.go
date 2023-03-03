@@ -16,22 +16,22 @@ import (
 )
 
 type WoodHoleSimulationSettings struct {
-	DataSets        []WoodHoleFrequencyDataset
-	BaseYear        int
-	DiscountRate    float64
-	InventoryPath   string
-	OutputDirectory string //do a ead output per dataset and another one with discounted values and computed EEAD
+	DataSets        []WoodHoleFrequencyDataset `json:"datasets"`
+	BaseYear        int                        `json:"base_year"`
+	DiscountRate    float64                    `json:"discount_rate"`
+	InventoryPath   string                     `json:"inventory_path"`
+	OutputDirectory string                     `json:"output_directory"` //do a ead output per dataset and another one with discounted values and computed EEAD
 	//terrain path?
 	//occtype definitions?
 	//life loss parameters?
 	//seed?
 }
 type WoodHoleFrequencyDataset struct {
-	Year                  int
-	WaterSurfaceGridPaths []string
+	Year                  int      `json:"year"`
+	WaterSurfaceGridPaths []string `json:"wse_paths"`
 	//uncertainty data??
-	WavePaths   []string
-	Frequencies []float64
+	WavePaths   []string  `json:"wave_paths"`
+	Frequencies []float64 `json:"frequencies"`
 }
 
 func WoodHoleEvent(hp hazardproviders.HazardProvider, sp consequences.StreamProvider, rw consequences.ResultsWriter) {
@@ -67,8 +67,9 @@ func CreateDiscountFactor(rate float64, numYearsInFuture int) float64 {
 	}
 	return 1 / (math.Pow(1+rate, float64(numYearsInFuture))) //calcuation of a discount factor basising on 1 dollar to create a multiplier.
 }
-func WoodHoleMultiYearDeterministicEAD(settings WoodHoleSimulationSettings) error {
+func WoodHoleMultiYearDeterministicEEAD(settings WoodHoleSimulationSettings) error {
 	inventory, err := structureprovider.InitGPK(settings.InventoryPath, "nsi")
+	inventory.SetDeterministic(true)
 	//create an aggregator results writer and inject it into the single compute
 	if err != nil {
 		return err
@@ -86,6 +87,7 @@ func WoodHoleMultiYearDeterministicEAD(settings WoodHoleSimulationSettings) erro
 		if err != nil {
 			return err
 		}
+		defer rw.Close()
 		WoodHoleDeterministicEAD(hps, d.Frequencies, inventory, rw)
 	}
 	return nil

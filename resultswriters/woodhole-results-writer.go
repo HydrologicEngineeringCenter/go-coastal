@@ -234,7 +234,7 @@ func (srw *WoodHoleResultsWriter) Close() {
 		feature.SetFieldFloat64(ceadidx, cead)
 
 		sead := compute.ComputeSpecialEAD(r.StructureDamages, srw.frequencies)
-		seadidx := layerDef.FieldIndex("s_Real_ EAD")
+		seadidx := layerDef.FieldIndex("s_Real_EAD")
 		feature.SetFieldFloat64(seadidx, sead)
 
 		acead := cead * srw.discountFactor
@@ -242,7 +242,7 @@ func (srw *WoodHoleResultsWriter) Close() {
 		feature.SetFieldFloat64(aceadidx, acead)
 
 		asead := sead * srw.discountFactor
-		aseadidx := layerDef.FieldIndex("s_Adj_ EAD")
+		aseadidx := layerDef.FieldIndex("s_Adj_EAD")
 		feature.SetFieldFloat64(aseadidx, asead)
 
 		err := srw.Layer.Create(feature)

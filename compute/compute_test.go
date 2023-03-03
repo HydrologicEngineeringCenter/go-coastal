@@ -1,6 +1,8 @@
 package compute
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -91,7 +93,62 @@ func Test_WoodHole_Event(t *testing.T) {
 	}
 	WoodHoleEvent(hp, sp, rw)
 }
-
+func Test_writeSettingsFile(t *testing.T) {
+	ds2030 := WoodHoleFrequencyDataset{
+		Year: 2030,
+		WaterSurfaceGridPaths: []string{
+			"/workspaces/go-coastal/data/woodhole/20 Year 2030_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/50 Year 2030_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/100 Year 2030_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/200 Year 2030_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/500 Year 2030_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/1000 Year 2030_wgs84.tif",
+		},
+		WavePaths: []string{
+			"/workspaces/go-coastal/data/woodhole/20 Year 2030 waves_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/50 Year 2030 waves_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/100 Year 2030 waves_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/200 Year 2030 waves_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/500 Year 2030 waves_wgs84.tif",
+			"/workspaces/go-coastal/data/woodhole/1000 Year 2030 waves_wgs84.tif",
+		},
+		Frequencies: []float64{
+			1.0 / 20.0,
+			1.0 / 50.0,
+			1.0 / 100.0,
+			1.0 / 200.0,
+			1.0 / 500.0,
+			1.0 / 1000.0,
+		},
+	}
+	simSettings := WoodHoleSimulationSettings{
+		DataSets:        []WoodHoleFrequencyDataset{ds2030},
+		BaseYear:        2025,
+		DiscountRate:    0.025,
+		InventoryPath:   "/workspaces/go-coastal/data/nsi.gpkg",
+		OutputDirectory: "/workspaces/go-coastal/data/woodhole/results/",
+	}
+	bytes, err := json.Marshal(simSettings)
+	if err != nil {
+		t.Fail()
+	}
+	ioutil.WriteFile("/workspaces/go-coastal/data/woodhole/settings.json", bytes, 0600)
+}
+func Test_WoodHole_EEAD(t *testing.T) {
+	bytes, err := ioutil.ReadFile("/workspaces/go-coastal/data/woodhole/settings.json")
+	if err != nil {
+		t.Fail()
+	}
+	whss := WoodHoleSimulationSettings{}
+	err = json.Unmarshal(bytes, &whss)
+	if err != nil {
+		t.Fail()
+	}
+	err = WoodHoleMultiYearDeterministicEEAD(whss)
+	if err != nil {
+		t.Fail()
+	}
+}
 func Test_WoodHole_EAD(t *testing.T) {
 
 	wsefp := []string{
