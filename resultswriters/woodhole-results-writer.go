@@ -12,6 +12,18 @@ import (
 	"github.com/dewberry/gdal"
 )
 
+const (
+	OccType                  = "occtype"
+	DamCat                   = "damcat"
+	X                        = "x"
+	Y                        = "y"
+	Name                     = "name"
+	StructureFutureValueEAD  = "s_fv_EAD"
+	ContentFutureValueEAD    = "c_fv_EAD"
+	StructurePresentValueEAD = "s_pv_EAD"
+	ContentPresentValueEAD   = "c_pv_EAD"
+)
+
 type WoodHoleResultsWriter struct {
 	filepath         string
 	frequencies      []float64
@@ -55,29 +67,29 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, d
 		newLayer.CreateField(fieldDef, true)
 	}()
 	func() {
-		fieldDefName := gdal.CreateFieldDefinition("name", gdal.FT_String)
+		fieldDefName := gdal.CreateFieldDefinition(Name, gdal.FT_String)
 		defer fieldDefName.Destroy()
 		newLayer.CreateField(fieldDefName, true)
-		fieldDefx := gdal.CreateFieldDefinition("x", gdal.FT_Real)
+		fieldDefx := gdal.CreateFieldDefinition(X, gdal.FT_Real)
 		defer fieldDefx.Destroy()
 		newLayer.CreateField(fieldDefx, true)
-		fieldDefy := gdal.CreateFieldDefinition("y", gdal.FT_Real)
+		fieldDefy := gdal.CreateFieldDefinition(Y, gdal.FT_Real)
 		defer fieldDefy.Destroy()
 		newLayer.CreateField(fieldDefy, true)
-		fieldDefOT := gdal.CreateFieldDefinition("occtype", gdal.FT_String)
+		fieldDefOT := gdal.CreateFieldDefinition(OccType, gdal.FT_String)
 		defer fieldDefOT.Destroy()
 		newLayer.CreateField(fieldDefOT, true)
-		fieldDefDC := gdal.CreateFieldDefinition("damcat", gdal.FT_String)
+		fieldDefDC := gdal.CreateFieldDefinition(DamCat, gdal.FT_String)
 		defer fieldDefDC.Destroy()
 		newLayer.CreateField(fieldDefDC, true)
 		//headers
 		for _, val := range frequencies {
 			s := strconv.FormatFloat(val, 'f', 3, 64)
 			s = strings.Replace(s, "0.", ".", 1)
-			sd := fmt.Sprintf("%v_%v_dam", s, "s") //s for structure c for content
-			cd := fmt.Sprintf("%v_%v_dam", s, "c")
-			d := fmt.Sprintf("%v_depth", s)
-			w := fmt.Sprintf("%v_wave", s)
+			sd := fmt.Sprintf("%v_%v_dam", "s", s) //s for structure c for content
+			cd := fmt.Sprintf("%v_%v_dam", "c", s)
+			d := fmt.Sprintf("depth_%v", s)
+			w := fmt.Sprintf("wave_%v", s)
 			//fmt.Println(s)
 			fieldDefsd := gdal.CreateFieldDefinition(sd, gdal.FT_Real)
 			defer fieldDefsd.Destroy()
@@ -92,16 +104,16 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, d
 			defer fieldDefw.Destroy()
 			newLayer.CreateField(fieldDefw, true)
 		}
-		fieldDefsead := gdal.CreateFieldDefinition("s_Real_EAD", gdal.FT_Real)
+		fieldDefsead := gdal.CreateFieldDefinition(StructureFutureValueEAD, gdal.FT_Real)
 		defer fieldDefsead.Destroy()
 		newLayer.CreateField(fieldDefsead, true)
-		fieldDefcead := gdal.CreateFieldDefinition("c_Real_EAD", gdal.FT_Real)
+		fieldDefcead := gdal.CreateFieldDefinition(ContentFutureValueEAD, gdal.FT_Real)
 		defer fieldDefcead.Destroy()
 		newLayer.CreateField(fieldDefcead, true)
-		fieldDefasead := gdal.CreateFieldDefinition("s_Adj_EAD", gdal.FT_Real)
+		fieldDefasead := gdal.CreateFieldDefinition(StructurePresentValueEAD, gdal.FT_Real)
 		defer fieldDefasead.Destroy()
 		newLayer.CreateField(fieldDefasead, true)
-		fieldDefacead := gdal.CreateFieldDefinition("c_Adj_EAD", gdal.FT_Real)
+		fieldDefacead := gdal.CreateFieldDefinition(ContentPresentValueEAD, gdal.FT_Real)
 		defer fieldDefacead.Destroy()
 		newLayer.CreateField(fieldDefacead, true)
 	}()
@@ -195,34 +207,34 @@ func (srw *WoodHoleResultsWriter) Close() {
 		g.SetPoint(0, r.x, r.y, 0)
 		feature.SetGeometryDirectly(g)
 		//name
-		sidx := layerDef.FieldIndex("name")
+		sidx := layerDef.FieldIndex(Name)
 		feature.SetFieldString(sidx, r.Name)
 		//x
-		xidx := layerDef.FieldIndex("x")
+		xidx := layerDef.FieldIndex(X)
 		feature.SetFieldFloat64(xidx, r.x)
 		//y
-		yidx := layerDef.FieldIndex("y")
+		yidx := layerDef.FieldIndex(Y)
 		feature.SetFieldFloat64(yidx, r.y)
 		//occtype
-		oidx := layerDef.FieldIndex("occtype")
+		oidx := layerDef.FieldIndex(OccType)
 		feature.SetFieldString(oidx, r.OccType)
 		//damcat
-		dcidx := layerDef.FieldIndex("damcat")
+		dcidx := layerDef.FieldIndex(DamCat)
 		feature.SetFieldString(dcidx, r.DamCat)
 		//frequency based headers
 		for i, val := range srw.frequencies {
 			s := strconv.FormatFloat(val, 'f', 3, 64)
 			s = strings.Replace(s, "0.", ".", 1)
-			sd := fmt.Sprintf("%v_%v_dam", s, "s") //s for structure c for content
+			sd := fmt.Sprintf("%v_%v_dam", "s", s) //s for structure c for content
 			sidx := layerDef.FieldIndex(sd)
 			feature.SetFieldFloat64(sidx, r.StructureDamages[i])
-			cd := fmt.Sprintf("%v_%v_dam", s, "c")
+			cd := fmt.Sprintf("%v_%v_dam", "c", s)
 			cidx := layerDef.FieldIndex(cd)
 			feature.SetFieldFloat64(cidx, r.ContentDamages[i])
-			d := fmt.Sprintf("%v_depth", s)
+			d := fmt.Sprintf("depth_%v", s)
 			didx := layerDef.FieldIndex(d)
 			feature.SetFieldFloat64(didx, r.Depths[i])
-			w := fmt.Sprintf("%v_wave", s)
+			w := fmt.Sprintf("wave_%v", s)
 			widx := layerDef.FieldIndex(w)
 			feature.SetFieldFloat64(widx, r.Waves[i])
 			//fmt.Println(s)
@@ -230,19 +242,19 @@ func (srw *WoodHoleResultsWriter) Close() {
 		}
 		//c_EAD, s_EAD
 		cead := compute.ComputeSpecialEAD(r.ContentDamages, srw.frequencies)
-		ceadidx := layerDef.FieldIndex("c_Real_EAD")
+		ceadidx := layerDef.FieldIndex(ContentFutureValueEAD)
 		feature.SetFieldFloat64(ceadidx, cead)
 
 		sead := compute.ComputeSpecialEAD(r.StructureDamages, srw.frequencies)
-		seadidx := layerDef.FieldIndex("s_Real_EAD")
+		seadidx := layerDef.FieldIndex(StructureFutureValueEAD)
 		feature.SetFieldFloat64(seadidx, sead)
 
 		acead := cead * srw.discountFactor
-		aceadidx := layerDef.FieldIndex("c_Adj_EAD")
+		aceadidx := layerDef.FieldIndex(ContentPresentValueEAD)
 		feature.SetFieldFloat64(aceadidx, acead)
 
 		asead := sead * srw.discountFactor
-		aseadidx := layerDef.FieldIndex("s_Adj_EAD")
+		aseadidx := layerDef.FieldIndex(StructurePresentValueEAD)
 		feature.SetFieldFloat64(aseadidx, asead)
 
 		err := srw.Layer.Create(feature)
