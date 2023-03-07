@@ -22,6 +22,9 @@ const (
 	ContentFutureValueEAD    = "c_fv_EAD"
 	StructurePresentValueEAD = "s_pv_EAD"
 	ContentPresentValueEAD   = "c_pv_EAD"
+	AnalysisYear             = "analysisyr"
+	ContentEquivalentEAD     = "ceead"
+	StrucutreEquivalentEAD   = "seead"
 )
 
 type WoodHoleResultsWriter struct {
@@ -32,6 +35,8 @@ type WoodHoleResultsWriter struct {
 	ds               *gdal.DataSource
 	currentFrequency int
 	discountFactor   float64
+	analysisYear     int
+	eeadResultWriter *WoodHoleEEADResultsWriter
 }
 type woodHoleStructureResult struct {
 	Name             string
@@ -45,7 +50,7 @@ type woodHoleStructureResult struct {
 	ContentDamages   []float64
 }
 
-func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, discountFactor float64) (*WoodHoleResultsWriter, error) {
+func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, discountFactor float64, analysisYear int, eeadWriter *WoodHoleEEADResultsWriter) (*WoodHoleResultsWriter, error) {
 	//make the maps
 	t := make(map[string]woodHoleStructureResult, 1)
 	//create the geopackage
@@ -85,7 +90,7 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, d
 		//headers
 		for _, val := range frequencies {
 			s := strconv.FormatFloat(val, 'f', 3, 64)
-			s = strings.Replace(s, "0.", ".", 1)
+			s = strings.Replace(s, "0.", "", 1)
 			sd := fmt.Sprintf("%v_%v_dam", "s", s) //s for structure c for content
 			cd := fmt.Sprintf("%v_%v_dam", "c", s)
 			d := fmt.Sprintf("depth_%v", s)
@@ -118,7 +123,7 @@ func InitwoodHoleResultsWriterFromFile(filepath string, frequencies []float64, d
 		newLayer.CreateField(fieldDefacead, true)
 	}()
 	newLayer.StartTransaction()
-	return &WoodHoleResultsWriter{filepath: filepath, results: t, frequencies: frequencies, Layer: &newLayer, ds: &dsOut, discountFactor: discountFactor}, nil
+	return &WoodHoleResultsWriter{filepath: filepath, results: t, frequencies: frequencies, Layer: &newLayer, ds: &dsOut, discountFactor: discountFactor, analysisYear: analysisYear, eeadResultWriter: eeadWriter}, nil
 }
 func (srw *WoodHoleResultsWriter) UpdateFrequencyIndex(i int) {
 	srw.currentFrequency = i
@@ -197,7 +202,7 @@ func (srw *WoodHoleResultsWriter) Close() {
 	//defer feature.Destroy()
 	pointIndex := 0
 	//rows
-
+	eeadHeaders := []string{Name, OccType, DamCat, X, Y, AnalysisYear, StrucutreEquivalentEAD, ContentEquivalentEAD}
 	for _, r := range srw.results {
 		feature := layerDef.Create()
 		defer feature.Destroy()
@@ -224,7 +229,7 @@ func (srw *WoodHoleResultsWriter) Close() {
 		//frequency based headers
 		for i, val := range srw.frequencies {
 			s := strconv.FormatFloat(val, 'f', 3, 64)
-			s = strings.Replace(s, "0.", ".", 1)
+			s = strings.Replace(s, "0.", "", 1)
 			sd := fmt.Sprintf("%v_%v_dam", "s", s) //s for structure c for content
 			sidx := layerDef.FieldIndex(sd)
 			feature.SetFieldFloat64(sidx, r.StructureDamages[i])
@@ -258,6 +263,12 @@ func (srw *WoodHoleResultsWriter) Close() {
 		feature.SetFieldFloat64(aseadidx, asead)
 
 		err := srw.Layer.Create(feature)
+		//write to the eeadwriter.
+		result := consequences.Result{
+			Headers: eeadHeaders,
+			Result:  []interface{}{r.Name, r.OccType, r.DamCat, r.x, r.y, srw.analysisYear, asead, acead},
+		}
+		srw.eeadResultWriter.Write(result)
 		if err != nil {
 			fmt.Println(err)
 		}

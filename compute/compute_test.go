@@ -190,7 +190,7 @@ func Test_WoodHole_EAD(t *testing.T) {
 	//rw, err := gcrw.InitGpkResultsWriter(rwfp, "EAD results")
 	rate := .025
 	numYearsInFuture := 0
-	rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, frequencies, CreateDiscountFactor(rate, numYearsInFuture))
+	rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, frequencies, CreateDiscountFactor(rate, numYearsInFuture), 2030, nil)
 
 	if err != nil {
 		panic("error creating results writer")

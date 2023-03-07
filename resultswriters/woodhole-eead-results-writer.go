@@ -2,7 +2,6 @@ package resultswriters
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/USACE/go-consequences/consequences"
 	"github.com/dewberry/gdal"
@@ -47,19 +46,19 @@ func InitwoodHoleEEADResultsWriterFromFile(filepath string) (*WoodHoleEEADResult
 		newLayer.CreateField(fieldDef, true)
 	}()
 	func() {
-		fieldDefName := gdal.CreateFieldDefinition("name", gdal.FT_String)
+		fieldDefName := gdal.CreateFieldDefinition(Name, gdal.FT_String)
 		defer fieldDefName.Destroy()
 		newLayer.CreateField(fieldDefName, true)
-		fieldDefx := gdal.CreateFieldDefinition("x", gdal.FT_Real)
+		fieldDefx := gdal.CreateFieldDefinition(X, gdal.FT_Real)
 		defer fieldDefx.Destroy()
 		newLayer.CreateField(fieldDefx, true)
-		fieldDefy := gdal.CreateFieldDefinition("y", gdal.FT_Real)
+		fieldDefy := gdal.CreateFieldDefinition(Y, gdal.FT_Real)
 		defer fieldDefy.Destroy()
 		newLayer.CreateField(fieldDefy, true)
-		fieldDefOT := gdal.CreateFieldDefinition("occtype", gdal.FT_String)
+		fieldDefOT := gdal.CreateFieldDefinition(OccType, gdal.FT_String)
 		defer fieldDefOT.Destroy()
 		newLayer.CreateField(fieldDefOT, true)
-		fieldDefDC := gdal.CreateFieldDefinition("damcat", gdal.FT_String)
+		fieldDefDC := gdal.CreateFieldDefinition(DamCat, gdal.FT_String)
 		defer fieldDefDC.Destroy()
 		newLayer.CreateField(fieldDefDC, true)
 
@@ -69,7 +68,7 @@ func InitwoodHoleEEADResultsWriterFromFile(filepath string) (*WoodHoleEEADResult
 	return &WoodHoleEEADResultsWriter{filepath: filepath, results: t, Layer: &newLayer, ds: &dsOut}, nil
 }
 func (srw *WoodHoleEEADResultsWriter) Write(r consequences.Result) {
-	n, err := r.Fetch("fd_id")
+	n, err := r.Fetch(Name)
 	if err != nil {
 		//painic?
 	}
@@ -77,23 +76,23 @@ func (srw *WoodHoleEEADResultsWriter) Write(r consequences.Result) {
 	wsr, ok := srw.results[name]
 	if !ok {
 		//create on first pass.
-		dc, err := r.Fetch("damage category")
+		dc, err := r.Fetch(DamCat)
 		if err != nil {
 			//painic?
 		}
 		damcat := dc.(string)
-		ot, err := r.Fetch("occupancy type")
+		ot, err := r.Fetch(OccType)
 		if err != nil {
 			//painic?
 		}
 		occtype := ot.(string)
 		//grab x and y
-		xi, err := r.Fetch("x")
+		xi, err := r.Fetch(X)
 		if err != nil {
 			//painic?
 		}
 		x := xi.(float64)
-		yi, err := r.Fetch("y")
+		yi, err := r.Fetch(Y)
 		if err != nil {
 			//painic?
 		}
@@ -115,71 +114,73 @@ func (srw *WoodHoleEEADResultsWriter) Write(r consequences.Result) {
 
 }
 func (srw *WoodHoleEEADResultsWriter) Close() {
-	layerDef := srw.Layer.Definition()
+	/*
+		layerDef := srw.Layer.Definition()
 
-	//defer feature.Destroy()
-	pointIndex := 0
-	//rows
+		//defer feature.Destroy()
+		pointIndex := 0
+		//rows
 
-	for _, r := range srw.results {
-		feature := layerDef.Create()
-		defer feature.Destroy()
-		fidx := layerDef.FieldIndex("objectid")
-		feature.SetFieldInteger(fidx, pointIndex)
-		g := gdal.Create(gdal.GT_Point)
-		g.SetPoint(0, r.x, r.y, 0)
-		feature.SetGeometryDirectly(g)
-		//name
-		sidx := layerDef.FieldIndex("name")
-		feature.SetFieldString(sidx, r.Name)
-		//x
-		xidx := layerDef.FieldIndex("x")
-		feature.SetFieldFloat64(xidx, r.x)
-		//y
-		yidx := layerDef.FieldIndex("y")
-		feature.SetFieldFloat64(yidx, r.y)
-		//occtype
-		oidx := layerDef.FieldIndex("occtype")
-		feature.SetFieldString(oidx, r.OccType)
-		//damcat
-		dcidx := layerDef.FieldIndex("damcat")
-		feature.SetFieldString(dcidx, r.DamCat)
-		//frequency based headers
-		totSEEAD := 0.0
-		totCEEAD := 0.0
-		for i, val := range r.AnalysisYears {
-			sd := fmt.Sprintf("%v_%v_eead", val, "s") //s for structure c for content
-			sidx := layerDef.FieldIndex(sd)
-			if sidx < 0 {
-				//create field.
-				//get index
+		for _, r := range srw.results {
+			feature := layerDef.Create()
+			defer feature.Destroy()
+			fidx := layerDef.FieldIndex("objectid")
+			feature.SetFieldInteger(fidx, pointIndex)
+			g := gdal.Create(gdal.GT_Point)
+			g.SetPoint(0, r.x, r.y, 0)
+			feature.SetGeometryDirectly(g)
+			//name
+			sidx := layerDef.FieldIndex("name")
+			feature.SetFieldString(sidx, r.Name)
+			//x
+			xidx := layerDef.FieldIndex("x")
+			feature.SetFieldFloat64(xidx, r.x)
+			//y
+			yidx := layerDef.FieldIndex("y")
+			feature.SetFieldFloat64(yidx, r.y)
+			//occtype
+			oidx := layerDef.FieldIndex("occtype")
+			feature.SetFieldString(oidx, r.OccType)
+			//damcat
+			dcidx := layerDef.FieldIndex("damcat")
+			feature.SetFieldString(dcidx, r.DamCat)
+			//frequency based headers
+			totSEEAD := 0.0
+			totCEEAD := 0.0
+			for i, val := range r.AnalysisYears {
+				sd := fmt.Sprintf("%v_%v_eead", "s", val) //s for structure c for content
+				sidx := layerDef.FieldIndex(sd)
+				if sidx < 0 {
+					//create field.
+					//get index
+				}
+				feature.SetFieldFloat64(sidx, r.StructureEEADs[i])
+				totSEEAD += r.StructureEEADs[i]
+				cd := fmt.Sprintf("%v_%v_eead", "c", val)
+				cidx := layerDef.FieldIndex(cd)
+				if cidx < 0 {
+					//create field.
+					//get index
+				}
+				feature.SetFieldFloat64(cidx, r.ContentEEADs[i])
+				totCEEAD += r.StructureEEADs[i]
 			}
-			feature.SetFieldFloat64(sidx, r.StructureEEADs[i])
-			totSEEAD += r.StructureEEADs[i]
-			cd := fmt.Sprintf("%v_%v_eead", val, "c")
-			cidx := layerDef.FieldIndex(cd)
-			if cidx < 0 {
-				//create field.
-				//get index
-			}
-			feature.SetFieldFloat64(cidx, r.ContentEEADs[i])
-			totCEEAD += r.StructureEEADs[i]
-		}
-		ceadidx := layerDef.FieldIndex("tot_c_EEAD")
-		feature.SetFieldFloat64(ceadidx, totCEEAD)
+			ceadidx := layerDef.FieldIndex("tot_c_EEAD")
+			feature.SetFieldFloat64(ceadidx, totCEEAD)
 
-		seadidx := layerDef.FieldIndex("tot_s_EEAD")
-		feature.SetFieldFloat64(seadidx, totSEEAD)
-		err := srw.Layer.Create(feature)
-		if err != nil {
-			fmt.Println(err)
+			seadidx := layerDef.FieldIndex("tot_s_EEAD")
+			feature.SetFieldFloat64(seadidx, totSEEAD)
+			err := srw.Layer.Create(feature)
+			if err != nil {
+				fmt.Println(err)
+			}
+			pointIndex++
 		}
-		pointIndex++
-	}
-	err2 := srw.Layer.CommitTransaction()
-	if err2 != nil {
-		fmt.Println(err2)
-	}
-	fmt.Printf("Closing, wrote %v features\n", pointIndex-1)
-	srw.ds.Destroy()
+		err2 := srw.Layer.CommitTransaction()
+		if err2 != nil {
+			fmt.Println(err2)
+		}
+		fmt.Printf("Closing, wrote %v features\n", pointIndex-1)
+		srw.ds.Destroy()
+	*/
 }

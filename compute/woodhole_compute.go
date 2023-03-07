@@ -74,6 +74,12 @@ func WoodHoleMultiYearDeterministicEEAD(settings WoodHoleSimulationSettings) err
 	if err != nil {
 		return err
 	}
+	eeadRwfp := fmt.Sprintf("%vEEAD.gpkg", settings.OutputDirectory)
+	eeadRW, err := resultswriters.InitwoodHoleEEADResultsWriterFromFile(eeadRwfp)
+	if err != nil {
+		return err
+	}
+	defer eeadRW.Close()
 	for _, d := range settings.DataSets {
 		//make hazardproviders
 		hps := make([]hazardproviders.HazardProvider, len(d.Frequencies))
@@ -83,7 +89,7 @@ func WoodHoleMultiYearDeterministicEEAD(settings WoodHoleSimulationSettings) err
 		//make results writer.
 		rwfp := fmt.Sprintf("%vEAD_%v.gpkg", settings.OutputDirectory, d.Year)
 		numYearsInFuture := d.Year - settings.BaseYear
-		rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, d.Frequencies, CreateDiscountFactor(settings.DiscountRate, numYearsInFuture))
+		rw, err := resultswriters.InitwoodHoleResultsWriterFromFile(rwfp, d.Frequencies, CreateDiscountFactor(settings.DiscountRate, numYearsInFuture), d.Year, eeadRW)
 		if err != nil {
 			return err
 		}
