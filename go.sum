@@ -12,6 +12,10 @@ github.com/USACE/go-consequences v0.0.0-20230302141255-b330d59b99d7 h1:KeLxvm/UJ
 github.com/USACE/go-consequences v0.0.0-20230302141255-b330d59b99d7/go.mod h1:wXXFeCWdBjaknqrSZAL1my1I7wrSh1T91brpygWJJ9U=
 github.com/USACE/go-consequences v0.0.0-20230302143124-d4d13b9362ce h1:YMmmtVCIQ2bkQ7aeGaEMrFjKtn+JoHfp3UWvs3PEmH0=
 github.com/USACE/go-consequences v0.0.0-20230302143124-d4d13b9362ce/go.mod h1:wXXFeCWdBjaknqrSZAL1my1I7wrSh1T91brpygWJJ9U=
+github.com/USACE/go-consequences v0.0.0-20230314112718-ecd7421e6f1f h1:QxWL2dFOaF4SCi0QL/TSxZprpejgR902ZsHeLkPkpWc=
+github.com/USACE/go-consequences v0.0.0-20230314112718-ecd7421e6f1f/go.mod h1:wXXFeCWdBjaknqrSZAL1my1I7wrSh1T91brpygWJJ9U=
+github.com/USACE/go-consequences v0.0.0-20230314114207-595691423588 h1:1dPNKE/Ndlvm3qcgih49cuJacA5P6MgG+uO/25Hsc1k=
+github.com/USACE/go-consequences v0.0.0-20230314114207-595691423588/go.mod h1:wXXFeCWdBjaknqrSZAL1my1I7wrSh1T91brpygWJJ9U=
 github.com/ajstarks/svgo v0.0.0-20180226025133-644b8db467af/go.mod h1:K08gAheRH3/J6wwsYMMT4xOr94bZjxIelGM0+d/wbFw=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I=
