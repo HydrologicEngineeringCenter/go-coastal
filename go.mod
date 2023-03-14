@@ -5,8 +5,8 @@ go 1.19
 replace gonum.org/v1/hdf5 => /workspaces/go-hdf5
 
 require (
-	github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20210916021611-3ecc0cdff5ec
-	github.com/USACE/go-consequences v0.0.0-20211113220300-3632c0f789d5
+	github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20220420143356-562ee86d1eb2
+	github.com/USACE/go-consequences v0.0.0-20230302143124-d4d13b9362ce
 	github.com/furstenheim/ConcaveHull v0.0.0-20181124172300-79de6d753046
 	github.com/tidwall/rtree v1.3.1
 	gonum.org/v1/hdf5 v0.0.0-00010101000000-000000000000
