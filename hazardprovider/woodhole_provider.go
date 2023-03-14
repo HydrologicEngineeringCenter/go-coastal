@@ -50,7 +50,7 @@ func (whgt WoodHoleGroupTif) ProvideHazard(l geography.Location) (hazards.Hazard
 	if err != nil {
 		return c, err
 	}
-	c.SetWaveHeight(normalizeWaveValues(w.WaveHeight())) //any actions here? should i reduce it by .7?
+	c.SetWaveHeight(normalizeWaveValues(w.Depth())) //any actions here? should i reduce it by .7?
 	return c, nil
 }
 
@@ -61,11 +61,11 @@ func (whgt WoodHoleGroupTif) ProvideHazard(l geography.Location) (hazards.Hazard
 func normalizeWSEValues(input float64) float64 {
 	switch input {
 	case 9997:
-		return 0.0 //depth or wse?
+		return 0.0 //depth no way to convert to wse?
 	case 9998:
 		panic(errors.New("arrrrgggg wse"))
 	case 9999:
-		return 1.0 //depth or wse?
+		return .5 //depth - no way to convert to wse
 	}
 	return input
 }
@@ -83,7 +83,10 @@ func normalizeWaveValues(input float64) float64 {
 	case 9999:
 		return 0 //does this happen in the wave files?
 	}
-	return input //could multiply by .7?
+	if input > 100 {
+		return 0 //correspondence with lisa winter dated 3/9/2023
+	}
+	return input //could multiply by .7 to reflect "damaging" wave height?
 }
 func (whgt WoodHoleGroupTif) ProvideHazardBoundary() (geography.BBox, error) {
 	return whgt.Wave.ProvideHazardBoundary()

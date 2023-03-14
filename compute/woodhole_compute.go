@@ -34,6 +34,13 @@ type WoodHoleFrequencyDataset struct {
 	Frequencies []float64 `json:"frequencies"`
 }
 
+func (settings WoodHoleSimulationSettings) AnalysisYears() []int {
+	years := []int{}
+	for _, d := range settings.DataSets {
+		years = append(years, d.Year)
+	}
+	return years
+}
 func WoodHoleEvent(hp hazardproviders.HazardProvider, sp consequences.StreamProvider, rw consequences.ResultsWriter) {
 	fmt.Println("Getting bbox")
 	bbox, err := hp.ProvideHazardBoundary()
@@ -75,7 +82,7 @@ func WoodHoleMultiYearDeterministicEEAD(settings WoodHoleSimulationSettings) err
 		return err
 	}
 	eeadRwfp := fmt.Sprintf("%vEEAD.gpkg", settings.OutputDirectory)
-	eeadRW, err := resultswriters.InitwoodHoleEEADResultsWriterFromFile(eeadRwfp)
+	eeadRW, err := resultswriters.InitwoodHoleEEADResultsWriterFromFile(eeadRwfp, settings.AnalysisYears())
 	if err != nil {
 		return err
 	}
