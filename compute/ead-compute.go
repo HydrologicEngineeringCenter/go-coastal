@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/USACE/go-consequences/compute"
 	"github.com/USACE/go-consequences/consequences"
 	"github.com/USACE/go-consequences/geography"
+	"github.com/USACE/go-consequences/hazards"
 	gcrw "github.com/USACE/go-consequences/resultswriters"
 	"github.com/USACE/go-consequences/structureprovider"
 	"github.com/USACE/go-consequences/structures"
@@ -246,13 +248,14 @@ func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp str
 		//ProvideHazard works off of a geography.Location
 		ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
 		//compute damages based on hazard being able to provide depth
-		header := []string{"fd_id", "x", "y", "hazards", "damage category", "occupancy type", "structure EAD", "content EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
+		header := []string{"fd_id", "x", "y", "hazards", "damcat", "occtype", "s EAD", "c EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
 		results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0}
 		var ret = consequences.Result{Headers: header, Result: results}
 		if err2 == nil {
 			//ds is an array of hazard events
 			cdams := make([]float64, len(frequencies))
 			sdams := make([]float64, len(frequencies))
+			hazardEvents := make([]hazards.CoastalEvent, len(frequencies))
 			lends := len(ds)
 			for i, d := range ds {
 				r, err := f.Compute(d)
@@ -270,11 +273,18 @@ func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp str
 					}
 					sdams[i] = r.Result[6].(float64)
 					cdams[i] = r.Result[7].(float64)
+					hazardEvents[i] = r.Result[3].(hazards.CoastalEvent)
 				}
 			}
 			//compute EAD
 			cead := compute.ComputeSpecialEAD(cdams, frequencies)
 			sead := compute.ComputeSpecialEAD(sdams, frequencies)
+			stringHazards := ""
+			for _, he := range hazardEvents {
+				b, _ := json.Marshal(he)
+				stringHazards += string(b)
+			}
+			ret.Result[3] = stringHazards
 			ret.Result[6] = sead
 			ret.Result[7] = cead
 			if ret.Result[1] != 0.0 {

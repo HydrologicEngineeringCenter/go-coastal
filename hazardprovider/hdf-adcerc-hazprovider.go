@@ -54,11 +54,14 @@ func (an AcNode) PointWithPayload() geometry.PointWithPayload {
 	}
 	ele[0] = dist
 	data[geometry.Terrain] = ele
-	swldists := make([]statistics.ContinuousDistribution, len(an.ZHm0))
-	hmodists := make([]statistics.ContinuousDistribution, len(an.ZHm0))
+	swldists := make([]statistics.ContinuousDistribution, len(an.ZHm0)-1)
+	hmodists := make([]statistics.ContinuousDistribution, len(an.ZHm0)-1)
 	for idx, _ := range an.ZHm0 {
-		swldists[idx] = statistics.NormalDistribution{Mean: an.ZSwl[idx], StandardDeviation: an.ZSwlstdev[idx]}
-		hmodists[idx] = statistics.NormalDistribution{Mean: an.ZHm0[idx], StandardDeviation: an.ZHm0stdev[idx]}
+		if idx != 0 {
+			swldists[idx-1] = statistics.NormalDistribution{Mean: an.ZSwl[idx], StandardDeviation: 0} //an.ZSwlstdev[idx]}
+			hmodists[idx-1] = statistics.NormalDistribution{Mean: an.ZHm0[idx], StandardDeviation: 0} //an.ZHm0stdev[idx]}
+		}
+
 	}
 	data[geometry.SWL] = swldists
 	data[geometry.HM0] = hmodists
@@ -95,8 +98,8 @@ type AcPoint struct {
 	Z float64
 }
 
-///////////////////////////////////////////////////////////
-/////////////////HDF ADCERC HAZARD PROVIDER///////////////
+// /////////////////////////////////////////////////////////
+// ///////////////HDF ADCERC HAZARD PROVIDER///////////////
 type HdfAdcercHazardProvider struct {
 	ds                       *geometry.Tin
 	queryCount               int64
@@ -194,7 +197,7 @@ func (hazP *HdfAdcercHazardProvider) Close() {
 ///////////////////////////////////////////////////////////
 /////////////////HDF ADCERC HAZARD Builder/////////////////
 
-//@TODO need to make sure we close all datasets
+// @TODO need to make sure we close all datasets
 type HdfAdcercHazardBuilder struct {
 	triangles    map[int32]AcTriangle
 	nodes        map[int32]AcNode
@@ -302,9 +305,9 @@ func processProbRow(probs []float64, nodeElev float64) []float64 {
 /////////////////////////////////////////////////////////////////
 /////UTILITY Reading Functions for In Memory Privider////////////
 
-//@QUESTION: is a 32bit int large enough for big models?
-//@QUESTION: is LACS a study, hence we use a study node?
-//should be able to remove all functions below this point.
+// @QUESTION: is a 32bit int large enough for big models?
+// @QUESTION: is LACS a study, hence we use a study node?
+// should be able to remove all functions below this point.
 func ReadTriangles(hdfFilePath string) (map[int32]AcTriangle, error) {
 	triangularConnsOptions := HdfReadOptions{
 		Dtype:           reflect.Float64,
@@ -358,12 +361,12 @@ func ReadNodes(hdfFilePath string) (map[int32]AcNode, error) {
 
 		node := AcNode{
 			Point: AcPoint{
-				X: row[3],
-				Y: row[2],
-				Z: row[4],
+				X: row[2],
+				Y: row[1],
+				Z: row[3],
 			},
 			Index:      int32(i),
-			AdcircNode: int32(row[1]),
+			AdcircNode: int32(row[0]),
 		}
 		nodes[node.AdcircNode] = node
 	}

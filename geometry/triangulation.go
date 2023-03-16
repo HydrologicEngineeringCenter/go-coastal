@@ -119,6 +119,19 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 					} else {
 						return true
 					}
+				} else {
+					twp, ok3 := value.(TriangleWithPayload)
+					if ok3 {
+						hasWave = true
+						data, err := twp.GetValues(x, y, .5)
+						swls = data[SWL]
+						hmos = data[HM0]
+						if err == nil {
+							return false
+						} else {
+							return true
+						}
+					}
 				}
 				return true
 			}
@@ -136,17 +149,21 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 			swls[i] = nodata
 		}
 		h := hazards.CoastalEvent{}
-		h.SetDepth(swls[i])
+		damagingDepthfactor := 0.0
 		h.SetSalinity(true)
 		if hasWave {
 			if hmos[i] == 0 {
 				hmos[i] = nodata
-			}
-			if math.IsNaN(hmos[i]) {
+				damagingDepthfactor = 0
+			} else if math.IsNaN(hmos[i]) {
 				hmos[i] = nodata
+				damagingDepthfactor = 0
+			} else {
+				damagingDepthfactor = math.Min(.55*swls[i], .703*hmos[i])
 			}
-			h.SetWaveHeight(hmos[i])
+			h.SetWaveHeight(hmos[i]) //is this correct?
 		}
+		h.SetDepth(swls[i] + damagingDepthfactor) ///swls[i]+min(.55*swls[i],.703*hmos[i])
 		hs = append(hs, h)
 	}
 	if len(hs) == 0 {
