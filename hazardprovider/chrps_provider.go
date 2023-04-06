@@ -131,7 +131,7 @@ func ReadCHRPS_GRD_Event(grdfp string, eventFile string) (*geometry.Tin, error) 
 	scanner.Scan() // burn the header
 	scanner.Scan() //count of triangles and points
 	row2 := strings.Trim(scanner.Text(), " ")
-	vals := strings.Split(row2, "     ") //not sure this will always work correctly
+	vals := strings.Split(row2, "  ") //not sure this will always work correctly
 	dimNSize, _ := strconv.ParseInt(vals[1], 10, 64)
 	dimTSize, _ := strconv.ParseInt(vals[0], 10, 64) //test.
 	nodes := make(map[int32]geometry.PointZZ)

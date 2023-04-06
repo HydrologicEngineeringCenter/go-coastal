@@ -21,9 +21,9 @@ func Test_CHRPS_GRD_EVENT(t *testing.T) {
 	fmt.Println(hp)
 }
 func Test_CHRPS_Compute(t *testing.T) {
-	root := "/workspaces/go-coastal/data/2008_GUSTAV"
-	fp := "/workspaces/go-coastal/data/cpra_2023updates_v14a_chk.grd"
-	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/2008_GUSTAV_Adv_20_PredNodes.txt")
+	root := "/workspaces/go-coastal/data/2012_SANDY"
+	fp := "/workspaces/go-coastal/data/NAC2014_R01_ClosedRivers.grd"
+	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/2012_SANDY_Adv_20_PredNodes.json")
 	if err != nil {
 		panic(err)
 	}

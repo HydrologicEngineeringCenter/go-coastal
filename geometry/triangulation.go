@@ -159,7 +159,7 @@ func (t *Tin) ComputeValues(x float64, y float64) ([]hazards.HazardEvent, error)
 				hmos[i] = nodata
 				damagingDepthfactor = 0
 			} else {
-				damagingDepthfactor = math.Min(.55*swls[i], .703*hmos[i])
+				damagingDepthfactor = math.Min(.55*swls[i], .703*1.6*hmos[i]) //hc = 1.6*hm0
 			}
 			h.SetWaveHeight(hmos[i]) //is this correct?
 		}
