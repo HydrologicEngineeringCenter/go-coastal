@@ -2,6 +2,9 @@ package geometry
 
 import (
 	"errors"
+	"math"
+
+	"github.com/HydrologicEngineeringCenter/go-statistics/statistics"
 )
 
 type TriangleWithPayload struct {
@@ -57,7 +60,7 @@ func CreateTriangleWithPayload(a *PointWithPayload, b *PointWithPayload, c *Poin
 	return TriangleWithPayload{p1: a, p2: b, p3: c, extent: e}
 }
 
-//https://codeplea.com/triangular-interpolation
+// https://codeplea.com/triangular-interpolation
 func (t TriangleWithPayload) GetValue(x float64, y float64, zidx int, prob float64) (map[Parameter]float64, error) {
 	invDenom := 1 / ((t.p2.Y-t.p3.Y)*(t.p1.X-t.p3.X) + (t.p3.X-t.p2.X)*(t.p1.Y-t.p3.Y))
 	w1 := ((t.p2.Y-t.p3.Y)*(x-t.p3.X) + (t.p3.X-t.p2.X)*(y-t.p3.Y)) * invDenom
@@ -114,7 +117,7 @@ func (t *TriangleWithPayload) Extent() Extent {
 func (t TriangleWithPayload) HasData() bool {
 	p1swl, p1ok := t.p1.Data[SWL]
 	if p1ok {
-		if len(p1swl) == 0 {
+		if !dataOk(p1swl) {
 			return false
 		}
 	} else {
@@ -122,7 +125,7 @@ func (t TriangleWithPayload) HasData() bool {
 	}
 	p2swl, p2ok := t.p2.Data[SWL]
 	if p2ok {
-		if len(p2swl) == 0 {
+		if !dataOk(p2swl) {
 			return false
 		}
 	} else {
@@ -130,7 +133,7 @@ func (t TriangleWithPayload) HasData() bool {
 	}
 	p3swl, p3ok := t.p3.Data[SWL]
 	if p3ok {
-		if len(p3swl) == 0 {
+		if !dataOk(p3swl) {
 			return false
 		}
 	} else {
@@ -138,6 +141,18 @@ func (t TriangleWithPayload) HasData() bool {
 	}
 
 	return true
+}
+func dataOk(p []statistics.ContinuousDistribution) bool {
+	for _, d := range p {
+		if !math.IsNaN(d.CentralTendency()) {
+			if !math.IsInf(d.CentralTendency(), -1) {
+				if !math.IsInf(d.CentralTendency(), 1) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 func (t *TriangleWithPayload) Points() []float64 {
 	return []float64{t.p1.X, t.p1.Y, t.p2.X, t.p2.Y, t.p3.X, t.p3.Y}

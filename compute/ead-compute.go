@@ -17,19 +17,19 @@ import (
 	"github.com/USACE/go-consequences/structures"
 )
 
-func ExpectedAnnualDamages(hazardfp string, inventoryfp string) {
+func ExpectedAnnualDamages(hazardfp string, grdfp string, inventoryfp string) {
 	outputPathParts := strings.Split(hazardfp, ".")
 	outfp := outputPathParts[0]
 	for i := 1; i < len(outputPathParts)-1; i++ {
 		outfp += "." + outputPathParts[i]
 	}
-	outfp += "_ead_consequences.json"
-	sw, err := gcrw.InitGeoJsonResultsWriterFromFile(outfp)
+	outfp += "_ead_consequences.gpkg"
+	sw, err := gcrw.InitGpkResultsWriter(outfp, "results")
 	if err != nil {
 		panic("error creating ead output")
 	}
 	defer sw.Close()
-	hp := hazardprovider.Init(hazardfp)
+	hp := hazardprovider.InitWithGrd(hazardfp, grdfp)
 	defer hp.Close()
 	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
 	if err != nil {
@@ -44,52 +44,12 @@ func ExpectedAnnualDamages(hazardfp string, inventoryfp string) {
 	frequencies := []float64{.5, .2, .1, .05, .02, .01, .005, .002, .001, .0002, .0001}
 	//get FilterStructures
 	nsp.ByBbox(bbox, func(f consequences.Receptor) {
-		//ProvideHazard works off of a geography.Location
-		ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
-		//compute damages based on hazard being able to provide depth
-		header := []string{"fd_id", "x", "y", "hazards", "damage category", "occupancy type", "structure EAD", "content EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
-		results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0}
-		var ret = consequences.Result{Headers: header, Result: results}
-		if err2 == nil {
-			//ds is an array of hazard events
-			cdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-			sdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-			lends := len(ds)
-			for i, d := range ds {
-				r, err := f.Compute(d)
-				if err == nil {
-					if i == lends-1 { //on the last one get the attributes.
-						ret.Result[0] = r.Result[0]
-						ret.Result[1] = r.Result[1]
-						ret.Result[2] = r.Result[2]
-						ret.Result[4] = r.Result[4]
-						ret.Result[5] = r.Result[5]
-						ret.Result[8] = r.Result[8]
-						ret.Result[9] = r.Result[9]
-						ret.Result[10] = r.Result[10]
-						ret.Result[11] = r.Result[11]
-					}
-					sdams[i] = r.Result[6].(float64)
-					cdams[i] = r.Result[7].(float64)
-				}
-			}
-			//compute EAD
-			cead := compute.ComputeSpecialEAD(cdams, frequencies)
-			sead := compute.ComputeSpecialEAD(sdams, frequencies)
-			ret.Result[6] = sead
-			ret.Result[7] = cead
-			if ret.Result[1] != 0.0 {
-				if sead != 0 || cead != 0 {
-					sw.Write(ret)
-				}
-			}
-
-		}
+		ScopingToolProcess(f, hp, frequencies, sw)
 	})
 }
-func ExpectedAnnualDamages_ResultsWriter(hazardfp string, inventoryfp string, sw consequences.ResultsWriter) {
+func ExpectedAnnualDamages_ResultsWriter(hazardfp string, gridfp string, inventoryfp string, sw consequences.ResultsWriter) {
 
-	hp := hazardprovider.Init(hazardfp)
+	hp := hazardprovider.InitWithGrd(hazardfp, gridfp)
 	defer hp.Close()
 	//@TODO handle structure file not found better
 	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
@@ -106,114 +66,9 @@ func ExpectedAnnualDamages_ResultsWriter(hazardfp string, inventoryfp string, sw
 	frequencies := []float64{.5, .2, .1, .05, .02, .01, .005, .002, .001, .0002, .0001}
 	//get FilterStructures
 	nsp.ByBbox(bbox, func(f consequences.Receptor) {
-		//ProvideHazard works off of a geography.Location
-		ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
-		//compute damages based on hazard being able to provide depth
-		header := []string{"fd_id", "x", "y", "hazards", "damage category", "occupancy type", "structure EAD", "content EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
-		results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0}
-		var ret = consequences.Result{Headers: header, Result: results}
-		if err2 == nil {
-			//ds is an array of hazard events
-			cdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-			sdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-			lends := len(ds)
-			for i, d := range ds {
-				r, err := f.Compute(d)
-				if err == nil {
-					if i == lends-1 { //on the last one get the attributes.
-						ret.Result[0] = r.Result[0]
-						ret.Result[1] = r.Result[1]
-						ret.Result[2] = r.Result[2]
-						ret.Result[4] = r.Result[4]
-						ret.Result[5] = r.Result[5]
-						ret.Result[8] = r.Result[8]
-						ret.Result[9] = r.Result[9]
-						ret.Result[10] = r.Result[10]
-						ret.Result[11] = r.Result[11]
-					}
-					sdams[i] = r.Result[6].(float64)
-					cdams[i] = r.Result[7].(float64)
-				}
-			}
-			//compute EAD
-			cead := compute.ComputeSpecialEAD(cdams, frequencies)
-			sead := compute.ComputeSpecialEAD(sdams, frequencies)
-			ret.Result[6] = sead
-			ret.Result[7] = cead
-			if ret.Result[1] != 0.0 {
-				if sead != 0 || cead != 0 {
-					sw.Write(ret)
-				}
-			}
-
-		}
+		ScopingToolProcess(f, hp, frequencies, sw)
 	})
 }
-
-/*
- - initialize hazard provider dataset for spatial querying
-    - has a single bounding box/concave hull (e.g. boundary)
- - open nsi gpkg
-   - for all points in bounding bbox
-     - compute hazard
-
-
-
-func (ahp *HdfAdcercHazardProvider) Close() {
-	defer ahp.nodeReader.Close()
-	defer ahp.elementReader.Close()
-	defer ahp.probabilityData.Close()
-}
-
-type HdfAdcercHazardProvider struct {
-	nodeReader      HdfDataset
-	elementReader   HdfDataset
-	probabilites    []float64
-	probabilityData HdfDataset
-}
-
-
-
-optionally:
- - allow hazard provider to have one or more boundaries
- - open nsi gpkg
-   - for each boundary
-      - for all points in bounding box
-	    - compute hazard
-
-
-type HazardProvider interface{
-	HazardBoundary(asBbox bool) Polygon //boundary for the entire region covered by this hazard provider
-	BoundaryElements() int //number of individual boundary elements
-	NextElement() Polygon or nil//
-	ProvideHazards(geography.Location) []hazards.HazardEvent
-	Close()
-}
-
-type HdfAdcercHazardProvider struct{
-	nodeReader HdfDataset
-	elementReader Hdf5Dataset
-	probabilites []float64
-	probabilityData HdfDataset
-}
-
-//implements all Hazard Provider interfaces
-//only change to code is to add an outer loop around nps.Bbox...for example
-
-for {
-	elemBound,err:=NextElement()
-	if err!=nil{
-		return err
-	}
-	if elemBound==nil{
-		break
-	}
-	nsp.ByPoly(polygon,func(f consequences.Receptor){
-
-	})
-}
-
-*/
 
 func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp string, dataset string, inventoryfp string) {
 	outputPathParts := strings.Split(swlfp, ".")
@@ -245,55 +100,7 @@ func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp str
 	//get FilterStructures
 
 	nsp.ByBbox(bbox, func(f consequences.Receptor) {
-		//ProvideHazard works off of a geography.Location
-		ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
-		//compute damages based on hazard being able to provide depth
-		header := []string{"fd_id", "x", "y", "hazards", "damcat", "occtype", "s EAD", "c EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
-		results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0}
-		var ret = consequences.Result{Headers: header, Result: results}
-		if err2 == nil {
-			//ds is an array of hazard events
-			cdams := make([]float64, len(frequencies))
-			sdams := make([]float64, len(frequencies))
-			hazardEvents := make([]hazards.CoastalEvent, len(frequencies))
-			lends := len(ds)
-			for i, d := range ds {
-				r, err := f.Compute(d)
-				if err == nil {
-					if i == lends-1 { //on the last one get the attributes.
-						ret.Result[0] = r.Result[0]
-						ret.Result[1] = r.Result[1]
-						ret.Result[2] = r.Result[2]
-						ret.Result[4] = r.Result[4]
-						ret.Result[5] = r.Result[5]
-						ret.Result[8] = r.Result[8]
-						ret.Result[9] = r.Result[9]
-						ret.Result[10] = r.Result[10]
-						ret.Result[11] = r.Result[11]
-					}
-					sdams[i] = r.Result[6].(float64)
-					cdams[i] = r.Result[7].(float64)
-					hazardEvents[i] = r.Result[3].(hazards.CoastalEvent)
-				}
-			}
-			//compute EAD
-			cead := compute.ComputeSpecialEAD(cdams, frequencies)
-			sead := compute.ComputeSpecialEAD(sdams, frequencies)
-			stringHazards := ""
-			for _, he := range hazardEvents {
-				b, _ := json.Marshal(he)
-				stringHazards += string(b)
-			}
-			ret.Result[3] = stringHazards
-			ret.Result[6] = sead
-			ret.Result[7] = cead
-			if ret.Result[1] != 0.0 {
-				if sead != 0 || cead != 0 {
-					sw.Write(ret)
-				}
-			}
-
-		}
+		ScopingToolProcess(f, hp, frequencies, sw)
 	})
 }
 
@@ -309,7 +116,7 @@ func ExpectedAnnualDamagesGPK_WithWAVE(grdfp string, swlfp string, hmo string, i
 		panic("error creating ead output")
 	}
 	defer sw.Close()
-	hp := hazardprovider.InitWithGrd(grdfp, swlfp, hmo)
+	hp := hazardprovider.InitWithGrdAndWave(grdfp, swlfp, hmo)
 	defer hp.Close()
 	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
 	if err != nil {
@@ -325,47 +132,7 @@ func ExpectedAnnualDamagesGPK_WithWAVE(grdfp string, swlfp string, hmo string, i
 	frequencies := []float64{10.0, 5.0, 2.0, 1.0, .5, .2, .1, .05, .02, .01, .005, .002, .001, .0005, .0002, .0001, .00005, .00002, .00001, .000005, .000002, .000001}
 	//get FilterStructures
 	nsp.ByBbox(bbox, func(f consequences.Receptor) {
-		//ProvideHazard works off of a geography.Location
-		ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
-		//compute damages based on hazard being able to provide depth
-		header := []string{"fd_id", "x", "y", "hazards", "damage category", "occupancy type", "structure EAD", "content EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65"}
-		results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0}
-		var ret = consequences.Result{Headers: header, Result: results}
-		if err2 == nil {
-			//ds is an array of hazard events
-			cdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-			sdams := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-			lends := len(ds)
-			for i, d := range ds {
-				r, err := f.Compute(d)
-				if err == nil {
-					if i == lends-1 { //on the last one get the attributes.
-						ret.Result[0] = r.Result[0]
-						ret.Result[1] = r.Result[1]
-						ret.Result[2] = r.Result[2]
-						ret.Result[4] = r.Result[4]
-						ret.Result[5] = r.Result[5]
-						ret.Result[8] = r.Result[8]
-						ret.Result[9] = r.Result[9]
-						ret.Result[10] = r.Result[10]
-						ret.Result[11] = r.Result[11]
-					}
-					sdams[i] = r.Result[6].(float64)
-					cdams[i] = r.Result[7].(float64)
-				}
-			}
-			//compute EAD
-			cead := compute.ComputeSpecialEAD(cdams, frequencies)
-			sead := compute.ComputeSpecialEAD(sdams, frequencies)
-			ret.Result[6] = sead
-			ret.Result[7] = cead
-			if ret.Result[1] != 0.0 {
-				if sead != 0 || cead != 0 {
-					sw.Write(ret)
-				}
-			}
-
-		}
+		ScopingToolProcess(f, hp, frequencies, sw)
 	})
 }
 
@@ -556,4 +323,74 @@ func ExpectedAnnualDamages_OSEOutput_CT(hazardfp string, inventoryfp string, fip
 
 		}
 	})
+}
+func ScopingToolProcess(f consequences.Receptor, hp hazardprovider.HazardProvider, frequencies []float64, sw consequences.ResultsWriter) {
+	//ProvideHazard works off of a geography.Location
+	s, ok := f.(structures.StructureDeterministic)
+	if !ok {
+		return
+	}
+	ds, err2 := hp.ProvideHazards(geography.Location{X: f.Location().X, Y: f.Location().Y})
+	//compute damages based on hazard being able to provide depth
+	header := []string{"fd_id", "x", "y", "hazards", "damcat", "occtype", "s EAD", "c EAD", "pop2amu65", "pop2amo65", "pop2pmu65", "pop2pmo65", "found_ht"}
+	results := []interface{}{"updateme", 0.0, 0.0, ds, "dc", "ot", 0.0, 0.0, 0, 0, 0, 0, 0.0}
+	for _, f := range frequencies {
+		header = append(header, fmt.Sprintf("%2.6fS", f))
+		header = append(header, fmt.Sprintf("%2.6fC", f))
+		header = append(header, fmt.Sprintf("%2.6fH", f))
+
+		results = append(results, 0.0)
+		results = append(results, 0.0)
+		results = append(results, "hazard")
+	}
+	var ret = consequences.Result{Headers: header, Result: results}
+	if err2 == nil {
+		//ds is an array of hazard events
+		cdams := make([]float64, len(frequencies))
+		sdams := make([]float64, len(frequencies))
+		hazardEvents := make([]hazards.CoastalEvent, len(frequencies))
+		lends := len(ds)
+		for i, d := range ds {
+			r, err := f.Compute(d)
+			if err == nil {
+				if i == lends-1 { //on the last one get the attributes.
+					ret.Result[0] = r.Result[0]
+					ret.Result[1] = r.Result[1]
+					ret.Result[2] = r.Result[2]
+					ret.Result[4] = r.Result[4]
+					ret.Result[5] = r.Result[5]
+					ret.Result[8] = r.Result[8]
+					ret.Result[9] = r.Result[9]
+					ret.Result[10] = r.Result[10]
+					ret.Result[11] = r.Result[11]
+					ret.Result[12] = s.FoundHt
+				}
+				sdams[i] = r.Result[6].(float64)
+				cdams[i] = r.Result[7].(float64)
+				hazardEvents[i] = r.Result[3].(hazards.CoastalEvent)
+				ret.Result[13+(i*3)] = sdams[i]
+				ret.Result[13+(i*3)+1] = cdams[i]
+				b, _ := json.Marshal(hazardEvents[i])
+				hazard := string(b)
+				ret.Result[13+(i*3)+2] = hazard
+			}
+		}
+		//compute EAD
+		cead := compute.ComputeSpecialEAD(cdams, frequencies)
+		sead := compute.ComputeSpecialEAD(sdams, frequencies)
+		stringHazards := ""
+		for _, he := range hazardEvents {
+			b, _ := json.Marshal(he)
+			stringHazards += string(b)
+		}
+		ret.Result[3] = stringHazards
+		ret.Result[6] = sead
+		ret.Result[7] = cead
+		if ret.Result[1] != 0.0 {
+			if sead != 0 || cead != 0 {
+				sw.Write(ret)
+			}
+		}
+
+	}
 }

@@ -99,16 +99,17 @@ func (t *TriangleZZ) Extent() Extent {
 	return t.extent
 }
 func (t TriangleZZ) HasData() bool {
+	equalsThree := 0
 	if len(t.p1.ZSwl) > 0 {
-		return true
+		equalsThree++
 	}
 	if len(t.p2.ZSwl) > 0 {
-		return true
+		equalsThree++
 	}
 	if len(t.p3.ZSwl) > 0 {
-		return true
+		equalsThree++
 	}
-	return false
+	return equalsThree == 3
 }
 func (t *TriangleZZ) Points() []float64 {
 	return []float64{t.p1.X, t.p1.Y, t.p2.X, t.p2.Y, t.p3.X, t.p3.Y}

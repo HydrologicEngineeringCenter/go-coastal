@@ -18,7 +18,7 @@ type csvHazardProvider struct {
 	computeStart             time.Time
 }
 
-//Init creates and produces an unexported csvHazardProvider
+// Init creates and produces an unexported csvHazardProvider
 func Init(fp string) *csvHazardProvider {
 	// Open the file
 	t, err := process_TIN(fp)
@@ -28,7 +28,16 @@ func Init(fp string) *csvHazardProvider {
 	c := time.Now()
 	return &csvHazardProvider{ds: t, computeStart: c}
 }
-func InitWithGrd(grdfp string, swlfp string, hmofp string) *csvHazardProvider {
+func InitWithGrd(fp string, grdfp string) *csvHazardProvider {
+	// Open the file
+	t, err := processGrdAndCSV(grdfp, fp)
+	if err != nil {
+		panic(err)
+	}
+	c := time.Now()
+	return &csvHazardProvider{ds: t, computeStart: c}
+}
+func InitWithGrdAndWave(grdfp string, swlfp string, hmofp string) *csvHazardProvider {
 	// Open the file
 	t, err := processGrdAndCSVs(grdfp, swlfp, hmofp)
 	if err != nil {
@@ -39,7 +48,7 @@ func InitWithGrd(grdfp string, swlfp string, hmofp string) *csvHazardProvider {
 	c := time.Now()
 	return &csvHazardProvider{ds: t, computeStart: c}
 }
-func (csv *csvHazardProvider) SetFrequency(zidx int) {
+func (csv *csvHazardProvider) SelectFrequency(zidx int) {
 	csv.ds.SetFrequency(zidx)
 }
 func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
@@ -69,7 +78,7 @@ func (csv *csvHazardProvider) ProvideHazard(l geography.Location) (hazards.Hazar
 	return h, notIn
 }
 
-//implement
+// implement
 func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.HazardEvent, error) {
 	csv.queryCount++
 	//check if point is in the hull polygon.
@@ -92,7 +101,7 @@ func (csv *csvHazardProvider) ProvideHazards(l geography.Location) ([]hazards.Ha
 	return nil, notIn
 }
 
-//implement
+// implement
 func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox := make([]float64, 4)
 	bbox[0] = csv.ds.MinX //upper left x
@@ -102,7 +111,7 @@ func (csv csvHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	return geography.BBox{Bbox: bbox}, nil
 }
 
-//implement
+// implement
 func (csv *csvHazardProvider) Close() {
 	//do nothing?
 	n := time.Since(csv.computeStart)

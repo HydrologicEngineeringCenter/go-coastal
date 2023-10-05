@@ -12,20 +12,22 @@ import (
 	"github.com/USACE/go-consequences/structureprovider"
 )
 
-func Event(hazardfp string, inventoryfp string, frequency int) {
+func Event(hazardfp string, inventoryfp string, frequency int, frequencystring string) {
 	outputPathParts := strings.Split(hazardfp, ".")
 	outfp := outputPathParts[0]
 	for i := 1; i < len(outputPathParts)-1; i++ {
 		outfp += "." + outputPathParts[i]
 	}
-	outfp += "_consequences.json"
-	sw, err := gcrw.InitGeoJsonResultsWriterFromFile(outfp)
+
+	outfp += "_" + frequencystring + "_consequences.gpkg"
+	//sw, err := gcrw.InitGeoJsonResultsWriterFromFile(outfp)
+	sw, err := gcrw.InitGpkResultsWriter(outfp, "results")
 	if err != nil {
 		panic("error creating ead output")
 	}
 	defer sw.Close()
 	hp := hazardprovider.Init(hazardfp)
-	hp.SetFrequency(frequency - int(hazardprovider.Two)) //offset to zero based position.
+	hp.SelectFrequency(frequency - int(hazardprovider.Two)) //offset to zero based position.
 	defer hp.Close()
 	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
 	if err != nil {

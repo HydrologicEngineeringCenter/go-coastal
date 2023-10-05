@@ -22,21 +22,24 @@ import (
  - probability data is joined by AcNode.Index=probability ordinal position
 */
 
-var CHL_HDFGRID_TC string = "Triangular Connectivity"
-var CHL_HDFGRID_NI string = "Nodal Information"
-var CHL_HDFGRID_AEF string = "AEF"
-var NODATA float64 = 0.0
+var CHL_HDFGRID_TC string = "Elements"
+var CHL_HDFGRID_NI string = "Nodes"
+var CHL_HDFGRID_NIDX string = "ADCIRC Node IDs"
+var CHL_HDFGRID_AEF string = "AEF Values"
+var NODATA float64 = -9999999.0
 
 type HazardProvider interface {
-	HazardBoundary(asBbox bool) []float64
-	NextElement() []float64
-	ProvideHazards(location geography.Location) []hazards.HazardEvent
+	ProvideHazardBoundary() (geography.BBox, error)
+	//NextElement() []float64
+	SelectFrequency(index int)
+	ProvideHazard(location geography.Location) (hazards.HazardEvent, error)
+	ProvideHazards(location geography.Location) ([]hazards.HazardEvent, error)
 	Close()
 }
 
 type AcNode struct {
-	Point      AcPoint
-	Index      int32 //nodes oridinal position in hdf dataset.  Should be equyal to "model node id-1"
+	Point AcPoint
+	//Index      int32 //nodes oridinal position in hdf dataset.  Should be equyal to "model node id-1"
 	AdcircNode int32
 	ZHm0       []float64
 	ZSwl       []float64
@@ -54,14 +57,11 @@ func (an AcNode) PointWithPayload() geometry.PointWithPayload {
 	}
 	ele[0] = dist
 	data[geometry.Terrain] = ele
-	swldists := make([]statistics.ContinuousDistribution, len(an.ZHm0)-1)
-	hmodists := make([]statistics.ContinuousDistribution, len(an.ZHm0)-1)
+	swldists := make([]statistics.ContinuousDistribution, len(an.ZHm0))
+	hmodists := make([]statistics.ContinuousDistribution, len(an.ZHm0))
 	for idx, _ := range an.ZHm0 {
-		if idx != 0 {
-			swldists[idx-1] = statistics.NormalDistribution{Mean: an.ZSwl[idx], StandardDeviation: 0} //an.ZSwlstdev[idx]}
-			hmodists[idx-1] = statistics.NormalDistribution{Mean: an.ZHm0[idx], StandardDeviation: 0} //an.ZHm0stdev[idx]}
-		}
-
+		swldists[idx] = statistics.NormalDistribution{Mean: an.ZSwl[idx], StandardDeviation: 0} //an.ZSwlstdev[idx]}
+		hmodists[idx] = statistics.NormalDistribution{Mean: an.ZHm0[idx], StandardDeviation: 0} //an.ZHm0stdev[idx]}
 	}
 	data[geometry.SWL] = swldists
 	data[geometry.HM0] = hmodists
@@ -79,10 +79,10 @@ type AcTriangle struct {
 	NodeA     int32 //adcircnode id
 	NodeB     int32 //adcircnode id
 	NodeC     int32 //adcircnode id
-	UrbLat    float64
-	UrbLon    float64
-	LrbLat    float64
-	LrbLon    float64
+	//UrbLat    float64
+	//UrbLon    float64
+	//LrbLat    float64
+	//LrbLon    float64
 }
 
 func (at AcTriangle) TriangleWithPayload(nodes map[int32]AcNode) geometry.TriangleWithPayload {
@@ -106,6 +106,7 @@ type HdfAdcercHazardProvider struct {
 	actualComputedStructures int64
 	computeStart             time.Time
 	frequencies              []float64
+	selectedFrequency        int
 }
 
 func NewHdfAdcercHazardProvider(grdfile string, probSwlFile string, probHmoFile string, dataset string) (*HdfAdcercHazardProvider, error) {
@@ -119,30 +120,40 @@ func NewHdfAdcercHazardProvider(grdfile string, probSwlFile string, probHmoFile 
 		return nil, err
 	}
 
-	aef, err := ReadAEF(grdfile)
+	aef, err := ReadAEF(probSwlFile)
 	if err != nil {
 		return nil, err
 	}
-	for i, v := range aef {
-		aef[i] = 1.0 / v
-	}
+	//for i, v := range aef {
+	//	aef[i] = 1.0 / v
+	//}
 
 	probSwl, err := ReadProbabilities(probSwlFile, dataset)
 	if err != nil {
 		return nil, err
 	}
-
+	nodeIdxSwl, err := ReadNodeTable(probSwlFile)
+	if err != nil {
+		return nil, err
+	}
 	probHmo, err := ReadProbabilities(probHmoFile, dataset)
 	if err != nil {
 		return nil, err
 	}
-
+	nodeIdxHmo, err := ReadNodeTable(probHmoFile)
+	if err != nil {
+		return nil, err
+	}
 	hzp := HdfAdcercHazardBuilder{
 		triangles:    triangles,
 		nodes:        nodes,
 		probabilites: aef,
-		probSwl:      probSwl,
+		nodeIdxHmo:   nodeIdxHmo,
+		nodeIdxSwl:   nodeIdxSwl,
 		probHmo:      probHmo,
+		probSwl:      probSwl,
+		stdevHmo:     &HdfDataset{},
+		stdevSwl:     &HdfDataset{},
 	}
 	err = hzp.assignProbsToNodes()
 	c := time.Now()
@@ -150,6 +161,30 @@ func NewHdfAdcercHazardProvider(grdfile string, probSwlFile string, probHmoFile 
 	return &HdfAdcercHazardProvider{ds: tin, computeStart: c, frequencies: aef}, nil
 }
 
+func ReadNodeTable(hdfFilePath string) (map[int32]int32, error) {
+	nodalOptions := HdfReadOptions{
+		Dtype:           reflect.Float64,
+		IncrementalRead: true,
+		IncrementSize:   1000, //read 1000 rows at a time
+	}
+	nodeData, err := NewHdfDataset(hdfFilePath, CHL_HDFGRID_NIDX, nodalOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer nodeData.Close()
+
+	nodeIdxs := make(map[int32]int32)
+
+	row := []float64{}
+	for i := 0; i < nodeData.Rows(); i++ {
+		nodeData.ReadRow(i, &row)
+		nodeIdxs[int32(row[0])] = int32(i)
+	}
+	return nodeIdxs, nil
+}
+func (hazP *HdfAdcercHazardProvider) SelectFrequency(index int) {
+	hazP.selectedFrequency = index
+}
 func (hazP *HdfAdcercHazardProvider) ProvideHazards(l geography.Location) ([]hazards.HazardEvent, error) {
 	hazP.queryCount++
 	//check if point is in the hull polygon.
@@ -171,7 +206,28 @@ func (hazP *HdfAdcercHazardProvider) ProvideHazards(l geography.Location) ([]haz
 	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
 	return nil, notIn
 }
+func (hazP *HdfAdcercHazardProvider) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
+	hazP.queryCount++
+	//check if point is in the hull polygon.
+	p := geometry.Point{X: l.X, Y: l.Y}
+	if hazP.queryCount%100000 == 0 {
+		n := time.Since(hazP.computeStart)
+		fmt.Print("Compute Time: ")
+		fmt.Println(n)
+		fmt.Println(fmt.Sprintf("Processed %v structures, with %v valid depths", hazP.queryCount, hazP.actualComputedStructures))
+	}
+	if hazP.ds.Hull.Contains(p) {
+		v, err := hazP.ds.ComputeValues(l.X, l.Y)
+		if err != nil {
+			return nil, err
+		}
+		hazP.actualComputedStructures++
 
+		return v[hazP.selectedFrequency], nil
+	}
+	notIn := hazardproviders.NoHazardFoundError{Input: "Point Not In Polygon"}
+	return nil, notIn
+}
 func (hazP *HdfAdcercHazardProvider) ProvideHazardBoundary() (geography.BBox, error) {
 	bbox := make([]float64, 4)
 	bbox[0] = hazP.ds.MinX //upper left x
@@ -202,6 +258,8 @@ type HdfAdcercHazardBuilder struct {
 	triangles    map[int32]AcTriangle
 	nodes        map[int32]AcNode
 	probabilites []float64
+	nodeIdxHmo   map[int32]int32
+	nodeIdxSwl   map[int32]int32
 	probHmo      *HdfDataset
 	probSwl      *HdfDataset
 	stdevHmo     *HdfDataset
@@ -268,17 +326,17 @@ func (hzp *HdfAdcercHazardBuilder) assignProbsToNodes() error {
 	swlRow := []float64{}
 	hmoRow := []float64{}
 	for _, node := range hzp.nodes {
-		err := hzp.probSwl.ReadRow(int(node.Index), &swlRow)
+		err := hzp.probSwl.ReadRow(int(hzp.nodeIdxSwl[node.AdcircNode]), &swlRow)
 		if err != nil {
 			return err
 		}
 		swl := processProbRow(swlRow, hzp.nodes[node.AdcircNode].Point.Z)
 
-		err = hzp.probHmo.ReadRow(int(node.Index), &hmoRow)
+		err = hzp.probHmo.ReadRow(int(hzp.nodeIdxHmo[node.AdcircNode]), &hmoRow)
 		if err != nil {
 			return err
 		}
-		hmo := processProbRow(hmoRow, hzp.nodes[node.AdcircNode].Point.Z)
+		hmo := processProbRow(hmoRow, 0.0) //do not modify hmo based on ground elevation//hzp.nodes[node.AdcircNode].Point.Z)
 		node.ZSwl = swl
 		node.ZHm0 = hmo
 		hzp.nodes[node.AdcircNode] = node
@@ -327,13 +385,9 @@ func ReadTriangles(hdfFilePath string) (map[int32]AcTriangle, error) {
 
 		node := AcTriangle{
 			ElementId: int32(row[0]),
-			NodeA:     int32(row[1]),
-			NodeB:     int32(row[2]),
-			NodeC:     int32(row[3]),
-			UrbLat:    row[4],
-			UrbLon:    row[5],
-			LrbLat:    row[6],
-			LrbLon:    row[7],
+			NodeA:     int32(row[2]), //index 1 is number of nodes in an element.
+			NodeB:     int32(row[3]),
+			NodeC:     int32(row[4]),
 		}
 		triangles[node.ElementId] = node
 	}
@@ -365,7 +419,6 @@ func ReadNodes(hdfFilePath string) (map[int32]AcNode, error) {
 				Y: row[1],
 				Z: row[3],
 			},
-			Index:      int32(i),
 			AdcircNode: int32(row[0]),
 		}
 		nodes[node.AdcircNode] = node

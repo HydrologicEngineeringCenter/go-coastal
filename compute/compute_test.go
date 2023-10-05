@@ -2,6 +2,7 @@ package compute
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -14,31 +15,77 @@ import (
 )
 
 func Test_Event(t *testing.T) {
-	f := hazardprovider.OneHundred
-	hp := "/Working/hec/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv"
-	sp := "/Working/hec/go-coastal/data/nsiv2_12.gpkg"
-	Event(hp, sp, int(f)) //pass in frequency
+	f := hazardprovider.Fifty
+	hp := "/workspaces/go-coastal/data/SACS/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
+	sp := "/workspaces/go-coastal/data/nsi.gpkg"
+	Event(hp, sp, int(f), f.String()) //pass in frequency
 }
-func Test_EAD(t *testing.T) {
-	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315_a.csv"
-	sp := "/workspaces/go-coastal/data/nsiv2_12.gpkg"
-	ExpectedAnnualDamages(hp, sp)
-}
-func Test_EAD_resultsWriter(t *testing.T) {
-	hp := "/Working/hec/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
-	sp := "/Working/hec/go-coastal/data/nsiv2_12.gpkg"
+func Test_Event_Grid_CSV(t *testing.T) {
+	//f := hazardprovider.TenThousand
+	cellsize := .0001
+	hp := "/workspaces/go-coastal/data/SACS/FL/CHS-SACS_FL_PCHA_Nodal_Inundation_Depth_Blended_SLC0_BE_v2023.csv"
+	gp := "/workspaces/go-coastal/data/SACS/sacs_sa_base_g001.grd"
 	outputPathParts := strings.Split(hp, ".")
 	outfp := outputPathParts[0]
 	for i := 1; i < len(outputPathParts)-1; i++ {
 		outfp += "." + outputPathParts[i]
 	}
-	outfp += "_ead_consequences.shp"
-	sw, err := gcrw.InitShpResultsWriter(outfp, "EADResults") //swap to geopackage.
+
+	hazp := hazardprovider.InitWithGrd(hp, gp)
+	//offset to zero based position.
+	defer hazp.Close()
+	for _, f := range hazardprovider.CoastalFrequencies {
+		hazp.SelectFrequency(int(f) - int(hazardprovider.Two))
+		Event_Grid(hp, gp, int(f), f.String(), cellsize) //pass in frequency
+	}
+
+}
+func Test_Event_Grid_HDF(t *testing.T) {
+	cellsize := .0001
+	hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
+	swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
+	gp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+	outputPathParts := strings.Split(swlp, ".")
+	outfp := outputPathParts[0]
+
+	hazp, err := hazardprovider.NewHdfAdcercHazardProvider(gp, swlp, hmop, "Best Estimate AEF")
+	//offset to zero based position.
+	if err != nil {
+		panic(err)
+	}
+	defer hazp.Close()
+	for i, f := range hazp.Frequencies() {
+		if f < .00004 {
+			outputfilepath := fmt.Sprintf("%v_%2.6f.tif", outfp, f)
+			hazp.SelectFrequency(i)
+			Event_Grid_new(outputfilepath, hazp, cellsize) //pass in frequency
+		}
+
+	}
+
+}
+func Test_EAD(t *testing.T) {
+	hp := "/workspaces/go-coastal/data/SACS/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
+	grdp := "/workspaces/go-coastal/data/SACS/sacs_sa_base_g001.grd"
+	sp := "/workspaces/go-coastal/data/nsi.gpkg"
+	ExpectedAnnualDamages(hp, grdp, sp)
+}
+func Test_EAD_resultsWriter(t *testing.T) {
+	hp := "/workspaces/go-coastal/data/SACS/FL/CHS-SACS_FL_PCHA_Nodal_Inundation_Depth_Blended_SLC0_BE_v2023.csv"
+	gp := "/workspaces/go-coastal/data/SACS/sacs_sa_base_g001.grd"
+	sp := "/workspaces/go-coastal/data/nsi.gpkg"
+	outputPathParts := strings.Split(hp, ".")
+	outfp := outputPathParts[0]
+	for i := 1; i < len(outputPathParts)-1; i++ {
+		outfp += "." + outputPathParts[i]
+	}
+	outfp += "_ead_consequences.gpkg"
+	sw, err := gcrw.InitGpkResultsWriter(outfp, "results")
 	if err != nil {
 		panic("error creating ead output")
 	}
 	defer sw.Close()
-	ExpectedAnnualDamages_ResultsWriter(hp, sp, sw)
+	ExpectedAnnualDamages_ResultsWriter(hp, gp, sp, sw)
 }
 
 // @TODO:export this as a c function
@@ -57,6 +104,24 @@ func Test_EADGpk_WithWavesHdf5(t *testing.T) {
 	hmop := "/workspaces/go-coastal/data/CHS_LACS_AEF_Hm0_SLC0.h5"
 	sp := "/workspaces/go-coastal/data/nsi.gpkg"
 	ExpectedAnnualDamagesGPK_WithWAVE_HDF(fp, swlp, hmop, "BE (standard)", sp)
+}
+func Test_EADGpk_WithWavesHdf5_LACS(t *testing.T) {
+
+	/*
+		fp := "/workspaces/go-coastal/data/LACS/CHS-LA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+		swlp := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post1RT_Nodes_SWL_AEF.h5"
+		hmop := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post0_Nodes_Hm0_AEF.h5"
+
+
+			hmop := "/workspaces/go-coastal/data/NACS/SLC0/CHS-NA_CC_SimB_Post1RT_Nodes_Hm0_AEF.h5"
+			swlp := "/workspaces/go-coastal/data/NACS/SLC0/CHS-NA_CC_SimB_Post1RT_Nodes_SWL_AEF.h5"
+			fp := "/workspaces/go-coastal/data/NACS/CHS-NA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+	*/
+	hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
+	swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
+	fp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+	sp := "/workspaces/go-coastal/data/nsi.gpkg"
+	ExpectedAnnualDamagesGPK_WithWAVE_HDF(fp, swlp, hmop, "Best Estimate AEF", sp)
 }
 func Test_EAD_OSE(t *testing.T) {
 	hp := "/workspaces/go-coastal/data/CHS_SACS_FL_Blending_PCHA_depth_SLC0_BE_v2020315.csv"
