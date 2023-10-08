@@ -21,8 +21,8 @@ func InitGridWriterFromFIle(filepath string, xSteps int, ySteps int, xmin float6
 	_ = srs.FromEPSG(4326)
 	proj, _ := srs.ToWKT()
 	outdata.SetProjection(proj)
-	outdata.SetGeoTransform([6]float64{xmin, xdelta, 0, ymin, 0, ydelta})
-	outband := outdata.RasterBand(1) //? 0 or 1?
+	outdata.SetGeoTransform([6]float64{xmin, xdelta, 0, ymin, 0, -ydelta}) //negative cell height for north up geotifs
+	outband := outdata.RasterBand(1)                                       //? 0 or 1?
 	//value := 2.23//needs to be unsafe pointer
 	//outband.WriteBlock(1,2,value)//need to use inverse geo transform to set the index for x and y.
 	gw := GridWriter{filepath: filepath, band: &outband, ds: &outdata}
