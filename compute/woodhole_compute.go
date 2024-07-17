@@ -1,5 +1,6 @@
 package compute
 
+/*
 import (
 	"fmt"
 	"log"
@@ -43,7 +44,7 @@ func (settings WoodHoleSimulationSettings) AnalysisYears() []int {
 }
 func WoodHoleEvent(hp hazardproviders.HazardProvider, sp consequences.StreamProvider, rw consequences.ResultsWriter) {
 	fmt.Println("Getting bbox")
-	bbox, err := hp.ProvideHazardBoundary()
+	bbox, err := hp.HazardBoundary()
 	if err != nil {
 		log.Panicf("Unable to get the raster bounding box: %s", err)
 	}
@@ -51,7 +52,7 @@ func WoodHoleEvent(hp hazardproviders.HazardProvider, sp consequences.StreamProv
 	//get FilterStructures
 	sp.ByBbox(bbox, func(f consequences.Receptor) {
 		//ProvideHazard works off of a geography.Location
-		d, err2 := hp.ProvideHazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
+		d, err2 := hp.Hazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
 		//compute damages based on hazard being able to provide a hazard.
 		if err2 == nil {
 			r, err := f.Compute(d)
@@ -107,7 +108,7 @@ func WoodHoleMultiYearDeterministicEEAD(settings WoodHoleSimulationSettings) err
 }
 func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies []float64, sp consequences.StreamProvider, rw *resultswriters.WoodHoleResultsWriter) {
 	fmt.Println("Getting bbox")
-	bbox, err := hps[len(hps)-1].ProvideHazardBoundary() //get the biggest depth grid.
+	bbox, err := hps[len(hps)-1].HazardBoundary() //get the biggest depth grid.
 	if err != nil {
 		log.Panicf("Unable to get the raster bounding box: %s", err)
 	}
@@ -122,7 +123,7 @@ func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies 
 			for idx, _ := range frequencies {
 				rw.UpdateFrequencyIndex(idx)
 				//ProvideHazard works off of a geography.Location
-				d, err2 := hps[idx].ProvideHazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
+				d, err2 := hps[idx].Hazard(geography.Location{X: f.Location().X, Y: f.Location().Y})
 				//compute damages based on hazard being able to provide a hazard.
 				c := d.(hazards.CoastalEvent)
 				depth := c.Depth() - s.GroundElevation
@@ -142,3 +143,4 @@ func WoodHoleDeterministicEAD(hps []hazardproviders.HazardProvider, frequencies 
 
 	})
 }
+*/

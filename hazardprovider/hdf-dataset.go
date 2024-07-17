@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gonum.org/v1/hdf5"
+	"github.com/usace/go-hdf5"
 )
 
 func OpenFile(filepath string) (*hdf5.File, error) {
@@ -80,7 +80,7 @@ func (h *HdfStrSet) RowSize() int {
 	return h.buffersize
 }
 
-//offset in bytes to the column requested
+// offset in bytes to the column requested
 func (h HdfStrSet) BytesTo(col int) (int, error) {
 	result := 0
 	if col > len(h.sizes)-1 {

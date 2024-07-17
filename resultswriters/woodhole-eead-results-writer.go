@@ -40,48 +40,48 @@ func InitwoodHoleEEADResultsWriterFromFile(filepath string, AnalysisYears []int)
 	//set spatial reference?
 	sr := gdal.CreateSpatialReference("")
 	sr.FromEPSG(4326)
-	newLayer := dsOut.CreateLayer("results", sr, gdal.GT_Point, []string{"GEOMETRY_NAME=shape"}) //forcing point data type.  source type (using lyaer.type()) from postgis was a generic geometry
+	newLayer := dsOut.CreateLayer("results", sr, gdal.GeometryType(gdal.GT_Point), []string{"GEOMETRY_NAME=shape"}) //forcing point data type.  source type (using lyaer.type()) from postgis was a generic geometry
 
 	func() {
-		fieldDef := gdal.CreateFieldDefinition("objectid", gdal.FT_Integer)
+		fieldDef := gdal.CreateFieldDefinition("objectid", gdal.FieldType(gdal.FT_Integer))
 		defer fieldDef.Destroy()
 		newLayer.CreateField(fieldDef, true)
 	}()
 	func() {
-		fieldDefName := gdal.CreateFieldDefinition(Name, gdal.FT_String)
+		fieldDefName := gdal.CreateFieldDefinition(Name, gdal.FieldType(gdal.FT_String))
 		defer fieldDefName.Destroy()
 		newLayer.CreateField(fieldDefName, true)
-		fieldDefx := gdal.CreateFieldDefinition(X, gdal.FT_Real)
+		fieldDefx := gdal.CreateFieldDefinition(X, gdal.FieldType(gdal.FT_Real))
 		defer fieldDefx.Destroy()
 		newLayer.CreateField(fieldDefx, true)
-		fieldDefy := gdal.CreateFieldDefinition(Y, gdal.FT_Real)
+		fieldDefy := gdal.CreateFieldDefinition(Y, gdal.FieldType(gdal.FT_Real))
 		defer fieldDefy.Destroy()
 		newLayer.CreateField(fieldDefy, true)
-		fieldDefOT := gdal.CreateFieldDefinition(OccType, gdal.FT_String)
+		fieldDefOT := gdal.CreateFieldDefinition(OccType, gdal.FieldType(gdal.FT_String))
 		defer fieldDefOT.Destroy()
 		newLayer.CreateField(fieldDefOT, true)
-		fieldDefDC := gdal.CreateFieldDefinition(DamCat, gdal.FT_String)
+		fieldDefDC := gdal.CreateFieldDefinition(DamCat, gdal.FieldType(gdal.FT_String))
 		defer fieldDefDC.Destroy()
 		newLayer.CreateField(fieldDefDC, true)
 		for _, val := range AnalysisYears {
 			sd := fmt.Sprintf("%v_%v", StrucutreEquivalentEAD, val) //s for structure c for content
 			//create field.
-			fieldDefsead := gdal.CreateFieldDefinition(sd, gdal.FT_Real)
+			fieldDefsead := gdal.CreateFieldDefinition(sd, gdal.FieldType(gdal.FT_Real))
 			defer fieldDefsead.Destroy()
 			newLayer.CreateField(fieldDefsead, true)
 			cd := fmt.Sprintf("%v_%v", ContentEquivalentEAD, val)
-			fieldDefcead := gdal.CreateFieldDefinition(cd, gdal.FT_Real)
+			fieldDefcead := gdal.CreateFieldDefinition(cd, gdal.FieldType(gdal.FT_Real))
 			defer fieldDefcead.Destroy()
 			newLayer.CreateField(fieldDefcead, true)
 		}
 		//toteeadc toteeads
 		sd := fmt.Sprintf("%v_%v", StrucutreEquivalentEAD, "tot")
-		fieldDefeeads := gdal.CreateFieldDefinition(sd, gdal.FT_Real)
+		fieldDefeeads := gdal.CreateFieldDefinition(sd, gdal.FieldType(gdal.FT_Real))
 		defer fieldDefeeads.Destroy()
 		newLayer.CreateField(fieldDefeeads, true)
 
 		cd := fmt.Sprintf("%v_%v", ContentEquivalentEAD, "tot")
-		fieldDefeeadc := gdal.CreateFieldDefinition(cd, gdal.FT_Real)
+		fieldDefeeadc := gdal.CreateFieldDefinition(cd, gdal.FieldType(gdal.FT_Real))
 		defer fieldDefeeadc.Destroy()
 		newLayer.CreateField(fieldDefeeadc, true)
 	}()
@@ -164,7 +164,7 @@ func (srw *WoodHoleEEADResultsWriter) Close() {
 		defer feature.Destroy()
 		fidx := layerDef.FieldIndex("objectid")
 		feature.SetFieldInteger(fidx, pointIndex)
-		g := gdal.Create(gdal.GT_Point)
+		g := gdal.Create(gdal.GeometryType(gdal.GT_Point))
 		g.SetPoint(0, r.x, r.y, 0)
 		feature.SetGeometryDirectly(g)
 		//name

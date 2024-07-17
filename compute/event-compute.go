@@ -21,7 +21,7 @@ func Event(hazardfp string, inventoryfp string, frequency int, frequencystring s
 
 	outfp += "_" + frequencystring + "_consequences.gpkg"
 	//sw, err := gcrw.InitGeoJsonResultsWriterFromFile(outfp)
-	sw, err := gcrw.InitGpkResultsWriter(outfp, "results")
+	sw, err := gcrw.InitSpatialResultsWriter(outfp, "results", "GPKG")
 	if err != nil {
 		panic("error creating ead output")
 	}
@@ -29,7 +29,7 @@ func Event(hazardfp string, inventoryfp string, frequency int, frequencystring s
 	hp := hazardprovider.Init(hazardfp)
 	hp.SelectFrequency(frequency - int(hazardprovider.Two)) //offset to zero based position.
 	defer hp.Close()
-	nsp, err := structureprovider.InitGPK(inventoryfp, "nsi")
+	nsp, err := structureprovider.InitStructureProvider(inventoryfp, "nsi", "GPKG")
 	if err != nil {
 		panic("error creating ead output")
 	}

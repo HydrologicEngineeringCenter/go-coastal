@@ -16,13 +16,13 @@ type GridWriter struct {
 func InitGridWriterFromFIle(filepath string, xSteps int, ySteps int, xmin float64, xdelta float64, ymin float64, ydelta float64) (*GridWriter, error) {
 	//make the maps
 	driver, _ := gdal.GetDriverByName("GTiff")
-	outdata := driver.Create(filepath, xSteps, ySteps, 1, gdal.Float32, []string{"BIGTIFF=YES", "TILED=YES", "COMPRESS=DEFLATE", "TILESIZE=256", "ZLEVEL=1"}) // TILED=YES COMPRESS=DEFLATE TILESIZE=256 ZLEVEL=1
+	outdata := driver.Create(filepath, xSteps, ySteps, 1, gdal.DataType(gdal.Float32), []string{"BIGTIFF=YES", "TILED=YES", "COMPRESS=DEFLATE", "TILESIZE=256", "ZLEVEL=1"}) // TILED=YES COMPRESS=DEFLATE TILESIZE=256 ZLEVEL=1
 	srs := gdal.CreateSpatialReference("")
 	_ = srs.FromEPSG(4326)
 	proj, _ := srs.ToWKT()
 	outdata.SetProjection(proj)
-	outdata.SetGeoTransform([6]float64{xmin, xdelta, 0, ymin, 0, -ydelta}) //negative cell height for north up geotifs
-	outband := outdata.RasterBand(1)                                       //? 0 or 1?
+	outdata.SetGeoTransform([6]float64{xmin, xdelta, 0, ymin, 0, ydelta}) //negative cell height for north up geotifs
+	outband := outdata.RasterBand(1)                                      //? 0 or 1?
 	//value := 2.23//needs to be unsafe pointer
 	//outband.WriteBlock(1,2,value)//need to use inverse geo transform to set the index for x and y.
 	gw := GridWriter{filepath: filepath, band: &outband, ds: &outdata}
@@ -51,7 +51,7 @@ func (srw *GridWriter) Write(r consequences.Result) {
 	py := int(igt[3] + x*igt[4] + y*igt[5])
 	buffer := make([]float64, 1*1)
 	buffer[0] = depth
-	srw.band.IO(gdal.Write, px, py, 1, 1, buffer, 1, 1, 0, 0)
+	srw.band.IO(gdal.RWFlag(gdal.Write), px, py, 1, 1, buffer, 1, 1, 0, 0)
 	//srw.band.WriteBlock(px, py, unsafe.SliceData(buffer))//need 1.20 go or above.
 
 }

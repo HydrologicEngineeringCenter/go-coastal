@@ -38,15 +38,15 @@ func InitWoodHoleGroupTif(wsefilepath string, wavefilepath string) WoodHoleGroup
 	return whgt
 }
 
-func (whgt WoodHoleGroupTif) ProvideHazard(l geography.Location) (hazards.HazardEvent, error) {
+func (whgt WoodHoleGroupTif) Hazard(l geography.Location) (hazards.HazardEvent, error) {
 	c := hazards.CoastalEvent{}
 	c.SetSalinity(true)
-	d, err := whgt.WSE.ProvideHazard(l)
+	d, err := whgt.WSE.Hazard(l)
 	if err != nil {
 		return c, err
 	}
 	c.SetDepth(normalizeWSEValues(d.Depth())) //need to pull ground elevation off
-	w, err := whgt.Wave.ProvideHazard(l)
+	w, err := whgt.Wave.Hazard(l)
 	if err != nil {
 		return c, err
 	}
@@ -88,8 +88,8 @@ func normalizeWaveValues(input float64) float64 {
 	}
 	return input //could multiply by .7 to reflect "damaging" wave height?
 }
-func (whgt WoodHoleGroupTif) ProvideHazardBoundary() (geography.BBox, error) {
-	return whgt.Wave.ProvideHazardBoundary()
+func (whgt WoodHoleGroupTif) HazardBoundary() (geography.BBox, error) {
+	return whgt.Wave.HazardBoundary()
 }
 
 // implement

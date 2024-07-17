@@ -27,11 +27,11 @@ func Test_CHRPS_Compute(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	nsp, err := structureprovider.InitGPK("/workspaces/go-coastal/data/nsi.gpkg", "nsi")
+	nsp, err := structureprovider.InitStructureProvider("/workspaces/go-coastal/data/nsi.gpkg", "nsi", "GPKG")
 	if err != nil {
 		panic(err)
 	}
-	w, _ := resultswriters.InitGeoJsonResultsWriterFromFile(root + "_consequences.json")
+	w, _ := resultswriters.InitSpatialResultsWriter(root+"_consequences.json", "results", "GeoJSON")
 	defer w.Close()
 	fmt.Println("Getting bbox")
 	bbox, err := hp.ProvideHazardBoundary()
@@ -61,7 +61,7 @@ func Test_CHRPS_Compute_ECAM(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	nsp, err := structureprovider.InitGPK("/workspaces/go-coastal/data/nsi.gpkg", "nsi")
+	nsp, err := structureprovider.InitStructureProvider("/workspaces/go-coastal/data/nsi.gpkg", "nsi", "GPKG")
 	if err != nil {
 		panic(err)
 	}
