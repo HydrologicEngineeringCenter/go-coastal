@@ -121,7 +121,42 @@ func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp str
 		ScopingToolProcess(f, hp, frequencies, sw, lle, rng)
 	})
 }
+func CriticalInfrastructureGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp string, dataset string, inventoryfp string) {
+	outputPathParts := strings.Split(swlfp, ".")
+	outfp := outputPathParts[0]
+	for i := 1; i < len(outputPathParts)-1; i++ {
+		outfp += "." + outputPathParts[i]
+	}
+	outfp += fmt.Sprintf("_criticalinfrastructure_consequences.gpkg")
+	sw, err := gcrw.InitSpatialResultsWriter(outfp, "CI_RESULTS", "GPKG") //swap to geopackage.
+	if err != nil {
+		panic("error creating CI output")
+	}
+	defer sw.Close()
+	hp, err := hazardprovider.NewHdfAdcercHazardProvider(grdfp, swlfp, hmofp, dataset)
+	if err != nil {
+		panic("error reading hazard input")
+	}
+	defer hp.Close()
+	cisp, err := criticalinfrastructure.InitCriticalInfrastructureProvider(inventoryfp, "criticalInfrastructure", "GPKG")
+	if err != nil {
+		panic("error loading structure inventory")
+	}
 
+	fmt.Println("Getting bbox")
+	bbox, err := hp.ProvideHazardBoundary()
+	if err != nil {
+		log.Panicf("Unable to get the raster bounding box: %s", err)
+	}
+	fmt.Println(bbox.ToString())
+	//frequencies := []float64{10.0, 5.0, 2.0, 1.0, .5, .2, .1, .05, .02, .01, .005, .002, .001, .0005, .0002, .0001, .00005, .00002, .00001, .000005, .000002, .000001}
+	frequencies := hp.Frequencies()
+	//get FilterStructures
+
+	cisp.ByBbox(bbox, func(f consequences.Receptor) {
+		ScopingToolCriticalInfrastructureProcess(f, hp, frequencies, sw)
+	})
+}
 func ExpectedAnnualDamagesGPK_WithWAVE(grdfp string, swlfp string, hmo string, inventoryfp string, complianceRate float64, seed int64) {
 	outputPathParts := strings.Split(swlfp, ".")
 	outfp := outputPathParts[0]
@@ -460,7 +495,7 @@ func ScopingToolProcess(f consequences.Receptor, hp hazardprovider.HazardProvide
 
 	}
 }
-func ScopingToolCriticalInfrastructureProcess(f consequences.Receptor, hp hazardprovider.HazardProvider, frequencies []float64, sw consequences.ResultsWriter, lle lifeloss.LifeLossEngine, rng *rand.Rand) {
+func ScopingToolCriticalInfrastructureProcess(f consequences.Receptor, hp hazardprovider.HazardProvider, frequencies []float64, sw consequences.ResultsWriter) {
 	//ProvideHazard works off of a geography.Location
 	_, ok := f.(criticalinfrastructure.CriticalInfrastructureFeature)
 	if !ok {
@@ -495,7 +530,7 @@ func ScopingToolCriticalInfrastructureProcess(f consequences.Receptor, hp hazard
 				hazardEvents[i] = r.Result[5].(hazards.CoastalEvent)
 				b, _ := json.Marshal(d)
 				hazard := string(b)
-				ret.Result[5+(i*1)+0] = hazard
+				ret.Result[5+(i*1)+1] = hazard
 			}
 		}
 

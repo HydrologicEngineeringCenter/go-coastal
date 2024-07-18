@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/HydrologicEngineeringCenter/go-statistics v0.0.0-20240126145250-a17483ae0981
-	github.com/USACE/go-consequences v0.0.0-20240621184600-f64840dc2e29
-	github.com/dewberry/gdal v0.3.4
+	github.com/USACE/go-consequences v0.0.0-20240718155419-ada8f32f50fb
+	github.com/dewberry/gdal v0.3.2
 	github.com/furstenheim/ConcaveHull v0.0.0-20181124172300-79de6d753046
 	github.com/tidwall/rtree v1.3.1
 	github.com/usace/go-hdf5 v0.0.0-20230626152743-72d0ae21fd0c

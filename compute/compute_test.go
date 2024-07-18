@@ -101,15 +101,24 @@ func Test_EADGpk_WithWaves(t *testing.T) {
 	ExpectedAnnualDamagesGPK_WithWAVE(fp, swlp, hmop, sp, complianceRate, int64(seed))
 }
 
-func Test_EADGpk_WithWavesHdf5(t *testing.T) {
+func Test_CIGpk_WithWavesHdf5(t *testing.T) {
 
-	fp := "/workspaces/go-coastal/data/CHS_LACS_Grid_Information.h5"
-	swlp := "/workspaces/go-coastal/data/CHS_LACS_AEF_SWL_SLC0.h5"
-	hmop := "/workspaces/go-coastal/data/CHS_LACS_AEF_Hm0_SLC0.h5"
-	sp := "/workspaces/go-coastal/data/nsi.gpkg"
-	complianceRate := 0.75
-	seed := 1234
-	ExpectedAnnualDamagesGPK_WithWAVE_HDF(fp, swlp, hmop, "BE (standard)", sp, complianceRate, int64(seed))
+	fp := "/workspaces/go-coastal/data/LACS/CHS-LA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+	swlp := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post1RT_Nodes_SWL_AEF.h5"
+	hmop := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post0_Nodes_Hm0_AEF.h5"
+	/*
+
+
+				hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
+				swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
+				fp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+
+		hmop := "/workspaces/go-coastal/data/NACS/SLC1/CHS-NA_CC_SimBslc1_Post1RT_Nodes_Hm0_AEF.h5"
+		swlp := "/workspaces/go-coastal/data/NACS/SLC1/CHS-NA_CC_SimBslc1_Post1RT_Nodes_SWL_AEF.h5"
+		fp := "/workspaces/go-coastal/data/NACS/CHS-NA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+	*/
+
+	CriticalInfrastructureGPK_WithWAVE_HDF(fp, swlp, hmop, "Best Estimate AEF", "/workspaces/go-coastal/data/CI_2024.GPKG")
 }
 func Test_EADGpk_WithWavesHdf5_LACS(t *testing.T) {
 
