@@ -21,13 +21,13 @@ func Test_CHRPS_GRD_EVENT(t *testing.T) {
 	fmt.Println(hp)
 }
 func Test_CHRPS_Compute(t *testing.T) {
-	root := "/workspaces/go-coastal/data/idalia/2023_IDALIA_Adv_13_PredNodes"
+	root := "/workspaces/go-coastal/data/ian/2022_IAN_adv_52_PredNodes"
 	fp := "/workspaces/go-coastal/data/SACS/sacs_gm_base_g001.grd"
-	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/idalia/2023_IDALIA_Adv_13_PredNodes.txt")
+	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/ian/2022_IAN_Adv_52_PredNodes.json")
 	if err != nil {
 		panic(err)
 	}
-	nsp, err := structureprovider.InitStructureProvider("/workspaces/go-coastal/data/nsi.gpkg", "nsi", "GPKG")
+	nsp, err := structureprovider.InitStructureProvider("/workspaces/go-coastal/data/ian/30BuildingsPointData.shp", "30BuildingsPointData", "ESRI Shapefile")
 	if err != nil {
 		panic(err)
 	}

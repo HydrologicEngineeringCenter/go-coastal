@@ -89,6 +89,24 @@ func Test_EAD_resultsWriter(t *testing.T) {
 	seed := 1234
 	ExpectedAnnualDamages_ResultsWriter(hp, gp, sp, sw, complianceRate, int64(seed))
 }
+func Test_CI_resultsWriter(t *testing.T) {
+	hp := "/workspaces/go-coastal/data/SACS/MS/CHS-SACS_MS_PCHA_Nodal_Inundation_Depth_SLC2_BE_vOct2023.csv"
+	gp := "/workspaces/go-coastal/data/SACS/sacs_gm_base_g001.grd"
+	sp := "/workspaces/go-coastal/data/criticalInfrastructure_final.gpkg"
+	outputPathParts := strings.Split(hp, ".")
+	outfp := outputPathParts[0]
+	for i := 1; i < len(outputPathParts)-1; i++ {
+		outfp += "." + outputPathParts[i]
+	}
+	outfp += "_criticalinfrastructure_consequences.gpkg"
+	sw, err := gcrw.InitSpatialResultsWriter(outfp, "results", "GPKG")
+	if err != nil {
+		panic("error creating CI output")
+	}
+	defer sw.Close()
+
+	CriticalInfrastructure_ResultsWriter(hp, gp, sp, sw)
+}
 
 // @TODO:export this as a c function
 func Test_EADGpk_WithWaves(t *testing.T) {
@@ -103,35 +121,34 @@ func Test_EADGpk_WithWaves(t *testing.T) {
 
 func Test_CIGpk_WithWavesHdf5(t *testing.T) {
 
-	fp := "/workspaces/go-coastal/data/LACS/CHS-LA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
-	swlp := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post1RT_Nodes_SWL_AEF.h5"
-	hmop := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post0_Nodes_Hm0_AEF.h5"
+	hmop := "/workspaces/go-coastal/data/NACS/SLC0/CHS-NA_CC_SimB_Post1RT_Nodes_Hm0_AEF.h5"
+	swlp := "/workspaces/go-coastal/data/NACS/SLC0/CHS-NA_CC_SimB_Post1RT_Nodes_SWL_AEF.h5"
+	fp := "/workspaces/go-coastal/data/NACS/CHS-NA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
 	/*
 
 
-				hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
-				swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
-				fp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+			fp := "/workspaces/go-coastal/data/LACS/CHS-LA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+			swlp := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post1RT_Nodes_SWL_AEF.h5"
+			hmop := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post0_Nodes_Hm0_AEF.h5"
 
-		hmop := "/workspaces/go-coastal/data/NACS/SLC1/CHS-NA_CC_SimBslc1_Post1RT_Nodes_Hm0_AEF.h5"
-		swlp := "/workspaces/go-coastal/data/NACS/SLC1/CHS-NA_CC_SimBslc1_Post1RT_Nodes_SWL_AEF.h5"
-		fp := "/workspaces/go-coastal/data/NACS/CHS-NA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+		hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
+		swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
+		fp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
 	*/
 
-	CriticalInfrastructureGPK_WithWAVE_HDF(fp, swlp, hmop, "Best Estimate AEF", "/workspaces/go-coastal/data/CI_2024.GPKG")
+	CriticalInfrastructureGPK_WithWAVE_HDF(fp, swlp, hmop, "Best Estimate AEF", "/workspaces/go-coastal/data/criticalInfrastructure_final.gpkg")
 }
 func Test_EADGpk_WithWavesHdf5_LACS(t *testing.T) {
-
-	fp := "/workspaces/go-coastal/data/LACS/CHS-LA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
-	swlp := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post1RT_Nodes_SWL_AEF.h5"
-	hmop := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post0_Nodes_Hm0_AEF.h5"
 	/*
+		fp := "/workspaces/go-coastal/data/LACS/CHS-LA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+		swlp := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post1RT_Nodes_SWL_AEF.h5"
+		hmop := "/workspaces/go-coastal/data/LACS/detq/CHS-LA_TS_SimBrfc2_Post0_Nodes_Hm0_AEF.h5"
+	*/
 
-
-				hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
-				swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
-				fp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
-
+	hmop := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post0_Nodes_Hm0_AEF.h5"
+	swlp := "/workspaces/go-coastal/data/TXCS/SLC0/CHS-TX_TS_SimB_Post1RT_Nodes_SWL_AEF.h5"
+	fp := "/workspaces/go-coastal/data/TXCS/CHS-TX_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"
+	/*
 		hmop := "/workspaces/go-coastal/data/NACS/SLC1/CHS-NA_CC_SimBslc1_Post1RT_Nodes_Hm0_AEF.h5"
 		swlp := "/workspaces/go-coastal/data/NACS/SLC1/CHS-NA_CC_SimBslc1_Post1RT_Nodes_SWL_AEF.h5"
 		fp := "/workspaces/go-coastal/data/NACS/CHS-NA_Spat_Sim0_Post0_Nodes_ADCIRC_Locations.h5"

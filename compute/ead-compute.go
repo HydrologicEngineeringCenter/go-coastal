@@ -83,7 +83,27 @@ func ExpectedAnnualDamages_ResultsWriter(hazardfp string, gridfp string, invento
 		ScopingToolProcess(f, hp, frequencies, sw, lle, rng)
 	})
 }
+func CriticalInfrastructure_ResultsWriter(hazardfp string, gridfp string, inventoryfp string, sw consequences.ResultsWriter) {
 
+	hp := hazardprovider.InitWithGrd(hazardfp, gridfp)
+	defer hp.Close()
+	//@TODO handle structure file not found better
+	cisp, err := criticalinfrastructure.InitCriticalInfrastructureProvider(inventoryfp, "criticalInfrastructure", "GPKG")
+	if err != nil {
+		panic("error creating ci output")
+	}
+	fmt.Println("Getting bbox")
+	bbox, err := hp.ProvideHazardBoundary()
+	if err != nil {
+		log.Panicf("Unable to get the raster bounding box: %s", err)
+	}
+	fmt.Println(bbox.ToString())
+	frequencies := []float64{.5, .2, .1, .05, .02, .01, .005, .002, .001, .0002, .0001}
+	//get FilterStructures
+	cisp.ByBbox(bbox, func(f consequences.Receptor) {
+		ScopingToolCriticalInfrastructureProcess(f, hp, frequencies, sw)
+	})
+}
 func ExpectedAnnualDamagesGPK_WithWAVE_HDF(grdfp string, swlfp string, hmofp string, dataset string, inventoryfp string, complianceRate float64, seed int64) {
 	outputPathParts := strings.Split(swlfp, ".")
 	outfp := outputPathParts[0]
@@ -515,23 +535,26 @@ func ScopingToolCriticalInfrastructureProcess(f consequences.Receptor, hp hazard
 		hazardEvents := make([]hazards.CoastalEvent, len(frequencies))
 		lends := len(ds)
 		for i, d := range ds {
-			//compute economic loss
-			r, err := f.Compute(d)
-			if err == nil {
-				if i == lends-1 { //on the last one get the attributes.
-					ret.Result[0] = r.Result[0]
-					ret.Result[1] = r.Result[1]
-					ret.Result[2] = r.Result[2]
-					ret.Result[4] = r.Result[4]
-					ret.Result[5] = r.Result[3]
+			if d.Depth() > 0 {
+				//compute impact
+				r, err := f.Compute(d)
+				if err == nil {
+					if i == lends-1 { //on the last one get the attributes.
+						ret.Result[0] = r.Result[0]
+						ret.Result[1] = r.Result[1]
+						ret.Result[2] = r.Result[2]
+						ret.Result[4] = r.Result[4]
+						ret.Result[5] = r.Result[3]
 
+					}
+
+					hazardEvents[i] = r.Result[5].(hazards.CoastalEvent)
+					b, _ := json.Marshal(d)
+					hazard := string(b)
+					ret.Result[5+(i*1)+1] = hazard
 				}
-
-				hazardEvents[i] = r.Result[5].(hazards.CoastalEvent)
-				b, _ := json.Marshal(d)
-				hazard := string(b)
-				ret.Result[5+(i*1)+1] = hazard
 			}
+
 		}
 
 		stringHazards := ""
