@@ -9,27 +9,28 @@ import (
 	"github.com/USACE/go-consequences/geography"
 	"github.com/USACE/go-consequences/resultswriters"
 	"github.com/USACE/go-consequences/structureprovider"
+	"github.com/USACE/go-consequences/structures"
 )
 
 func Test_Hurricane_IAN(t *testing.T) {
-	scenario := "low_surge_wave"
+	scenario := "high_surge_wave"
 	//load hazard data
-	hfp := fmt.Sprintf("/workspaces/go-coastal/data/ian/%v_30.csv", scenario)
+	hfp := fmt.Sprintf("/workspaces/go-coastal/data/ian/%v.csv", scenario)
 	hp, err := InitIanCSVFileProvider(hfp)
 	defer hp.Close()
 	if err != nil {
 		panic(err)
 	}
 	//load structure data
-	sfp := "/workspaces/go-coastal/data/ian/30BuildingsPointData.shp"
-	sp, err := structureprovider.InitStructureProvider(sfp, "30BuildingsPointData", "ESRI Shapefile")
+	sfp := "/workspaces/go-coastal/data/ian/PearlStBuildingsPointData.shp"
+	sp, err := structureprovider.InitStructureProvider(sfp, "PearlStBuildingsPointData", "ESRI Shapefile")
 
 	if err != nil {
 		panic(err)
 	}
 
 	//choose a results writer.
-	rfp := fmt.Sprintf("/workspaces/go-coastal/data/ian/30BuildingsPointData_%v_results.json", scenario)
+	rfp := fmt.Sprintf("/workspaces/go-coastal/data/ian/PearlStBuildingsPointData_%v_results.json", scenario)
 	rw, err := resultswriters.InitSpatialResultsWriter(rfp, "results", "GeoJSON")
 	if err != nil {
 		panic(err)
@@ -50,8 +51,17 @@ func Test_Hurricane_IAN(t *testing.T) {
 		if err2 == nil {
 			r, err3 := f.Compute(he)
 			r.Headers = append(r.Headers, "wave_h_ft")
+
 			//jsonstring := string(b)
 			r.Result = append(r.Result, he.WaveHeight())
+			s, sok := f.(structures.StructureDeterministic)
+			if sok {
+				df, err := s.OccType.GetComponentDamageFunctionForHazard("structure", he)
+				if err == nil {
+					r.Headers = append(r.Headers, "df_source")
+					r.Result = append(r.Result, df.Source)
+				}
+			}
 			if err3 == nil {
 				rw.Write(r)
 			}
