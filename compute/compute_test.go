@@ -71,26 +71,26 @@ func Test_EAD(t *testing.T) {
 	ExpectedAnnualDamages(hp, gp, sp, complianceRate, int64(seed))
 }
 func Test_EAD_resultsWriter(t *testing.T) {
-	hp := "/workspaces/go-coastal/data/SACS/AL/CHS-SACS_AL_PCHA_Nodal_Inundation_Depth_SLC0_BE_v2023.csv"
-	gp := "/workspaces/go-coastal/data/SACS/sacs_gm_base_g001.grd"
+	hp := "/workspaces/go-coastal/data/SACS/SC/CHS-SACS_SC_PCHA_Nodal_Inundation_Depth_SLC2_BE_vOct2023.csv"
+	gp := "/workspaces/go-coastal/data/SACS/sacs_sa_base_g001.grd"
 	sp := "/workspaces/go-coastal/data/nsi_2022.gpkg"
 	outputPathParts := strings.Split(hp, ".")
 	outfp := outputPathParts[0]
 	for i := 1; i < len(outputPathParts)-1; i++ {
 		outfp += "." + outputPathParts[i]
 	}
-	outfp += "_ead_consequences.gpkg"
+	outfp += "_ead_consequences_060.gpkg"
 	sw, err := gcrw.InitSpatialResultsWriter(outfp, "results", "GPKG")
 	if err != nil {
 		panic("error creating ead output")
 	}
 	defer sw.Close()
-	complianceRate := 0.75
+	complianceRate := 0.90
 	seed := 1234
 	ExpectedAnnualDamages_ResultsWriter(hp, gp, sp, sw, complianceRate, int64(seed))
 }
 func Test_CI_resultsWriter(t *testing.T) {
-	hp := "/workspaces/go-coastal/data/SACS/MS/CHS-SACS_MS_PCHA_Nodal_Inundation_Depth_SLC2_BE_vOct2023.csv"
+	hp := "/workspaces/go-coastal/data/SACS/AL/CHS-SACS_AL_PCHA_Nodal_Inundation_Depth_SLC0_BE_vOct2023.csv"
 	gp := "/workspaces/go-coastal/data/SACS/sacs_gm_base_g001.grd"
 	sp := "/workspaces/go-coastal/data/criticalInfrastructure_final.gpkg"
 	outputPathParts := strings.Split(hp, ".")
@@ -98,7 +98,7 @@ func Test_CI_resultsWriter(t *testing.T) {
 	for i := 1; i < len(outputPathParts)-1; i++ {
 		outfp += "." + outputPathParts[i]
 	}
-	outfp += "_criticalinfrastructure_consequences.gpkg"
+	outfp += "_criticalinfrastructure_consequences_retry.gpkg"
 	sw, err := gcrw.InitSpatialResultsWriter(outfp, "results", "GPKG")
 	if err != nil {
 		panic("error creating CI output")

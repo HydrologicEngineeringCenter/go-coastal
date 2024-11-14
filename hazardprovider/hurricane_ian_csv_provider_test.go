@@ -13,9 +13,9 @@ import (
 )
 
 func Test_Hurricane_IAN(t *testing.T) {
-	scenario := "high_surge_wave"
+	scenario := "avg_surge_no_wave"
 	//load hazard data
-	hfp := fmt.Sprintf("/workspaces/go-coastal/data/ian/%v.csv", scenario)
+	hfp := fmt.Sprintf("/workspaces/go-coastal/data/ian/%v_pearl.csv", scenario)
 	hp, err := InitIanCSVFileProvider(hfp)
 	defer hp.Close()
 	if err != nil {
@@ -24,7 +24,7 @@ func Test_Hurricane_IAN(t *testing.T) {
 	//load structure data
 	sfp := "/workspaces/go-coastal/data/ian/PearlStBuildingsPointData.shp"
 	sp, err := structureprovider.InitStructureProvider(sfp, "PearlStBuildingsPointData", "ESRI Shapefile")
-
+	//nsisp := structureprovider.InitNSISP()
 	if err != nil {
 		panic(err)
 	}
@@ -60,6 +60,7 @@ func Test_Hurricane_IAN(t *testing.T) {
 				if err == nil {
 					r.Headers = append(r.Headers, "df_source")
 					r.Result = append(r.Result, df.Source)
+					//r.Result = append(r.Result, )
 				}
 			}
 			if err3 == nil {

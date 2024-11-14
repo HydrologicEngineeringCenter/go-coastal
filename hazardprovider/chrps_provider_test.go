@@ -13,7 +13,7 @@ import (
 
 func Test_CHRPS_GRD_EVENT(t *testing.T) {
 	fp := "/workspaces/go-coastal/data/cpra_2023updates_v14a_chk.grd"
-	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/2008_GUSTAV_Adv_20_PredNodes.txt")
+	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/2008_GUSTAV_Adv_20_PredNodes.txt", "CHS-GoM")
 	if err != nil {
 		panic(err)
 	}
@@ -21,17 +21,18 @@ func Test_CHRPS_GRD_EVENT(t *testing.T) {
 	fmt.Println(hp)
 }
 func Test_CHRPS_Compute(t *testing.T) {
-	root := "/workspaces/go-coastal/data/ian/2022_IAN_adv_52_PredNodes"
+	root := "/workspaces/go-coastal/data/milton/2024_MILTON_Adv_11_Pred_0"
 	fp := "/workspaces/go-coastal/data/SACS/sacs_gm_base_g001.grd"
-	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/ian/2022_IAN_Adv_52_PredNodes.json")
+	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/milton/2024_MILTON_Adv_11_Pred_0.json", "CHS-GoM")
 	if err != nil {
 		panic(err)
 	}
-	nsp, err := structureprovider.InitStructureProvider("/workspaces/go-coastal/data/ian/30BuildingsPointData.shp", "30BuildingsPointData", "ESRI Shapefile")
+	nsp, err := structureprovider.InitStructureProvider("/workspaces/go-coastal/data/nsi_2022.gpkg", "nsi(shape)", "GPKG")
 	if err != nil {
 		panic(err)
 	}
-	w, _ := resultswriters.InitSpatialResultsWriter(root+"_consequences.json", "results", "GeoJSON")
+	nsp.SetDeterministic(true)
+	w, _ := resultswriters.InitSpatialResultsWriter(root+"_consequences.gpkg", "results", "GPKG")
 	defer w.Close()
 	fmt.Println("Getting bbox")
 	bbox, err := hp.ProvideHazardBoundary()
@@ -57,7 +58,7 @@ func Test_CHRPS_Compute(t *testing.T) {
 func Test_CHRPS_Compute_ECAM(t *testing.T) {
 	root := "/workspaces/go-coastal/data/2008_GUSTAV"
 	fp := "/workspaces/go-coastal/data/cpra_2023updates_v14a_chk.grd"
-	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/2008_GUSTAV_Adv_20_PredNodes.txt")
+	hp, err := InitCHRPS(fp, "/workspaces/go-coastal/data/2008_GUSTAV_Adv_20_PredNodes.txt", "CHS-GoM")
 	if err != nil {
 		panic(err)
 	}

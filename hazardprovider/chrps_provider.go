@@ -100,26 +100,31 @@ func (csv *chrpsHazardProvider) Close() {
 
 }
 
+type Dataset []struct {
+	Event
+}
 type Event struct {
 	GPM      string      `json:"GPM"`
 	Response [][]float64 `json:"resp"`
+	//Waves    [][]float64 `json:"resp_wave"`
+	//SWLS     [][]float64 `json:"resp_node"`
 }
 
-func InitCHRPS(gridFile string, eventFile string) (chrpsHazardProvider, error) {
+func InitCHRPS(gridFile string, eventFile string, meshname string) (chrpsHazardProvider, error) {
 	chp := chrpsHazardProvider{
 		gridFile:                 gridFile,
 		eventFile:                eventFile,
 		actualComputedStructures: 0,
 		computeStart:             time.Now(),
 	}
-	ds, err := ReadCHRPS_GRD_Event(gridFile, eventFile)
+	ds, err := ReadCHRPS_GRD_Event(gridFile, eventFile, meshname)
 	if err != nil {
 		panic(err)
 	}
 	chp.ds = ds
 	return chp, nil
 }
-func ReadCHRPS_GRD_Event(grdfp string, eventFile string) (*geometry.Tin, error) {
+func ReadCHRPS_GRD_Event(grdfp string, eventFile string, meshname string) (*geometry.Tin, error) {
 	grdf, err := os.Open(grdfp)
 	if err != nil {
 		panic(err)
@@ -193,28 +198,34 @@ func ReadCHRPS_GRD_Event(grdfp string, eventFile string) (*geometry.Tin, error) 
 				if err != nil {
 					panic(err)
 				}
-				e := Event{}
-				err = json.Unmarshal(eventbytes, &e)
+				dset := Dataset{}
+				err = json.Unmarshal(eventbytes, &dset)
 				if err != nil {
 					panic(err)
 				}
+				for _, dataset := range dset {
+					if dataset.GPM == meshname { //todo fix this.
+						for _, data := range dataset.Response { //
+							//parse each row.
+							//wdata := e.data[0].Waves[idx]
+							nodeid := int32(data[0])
+							if err != nil {
+								panic(err)
+							}
 
-				for _, data := range e.Response {
-					//parse each row.
-					nodeid := int32(data[0])
-					if err != nil {
-						panic(err)
+							node := nodes[nodeid]
+							zhmo := make([]float64, 1)
+							zswl := make([]float64, 1)
+							zhmo[0] = 0.0 //wdata[3] //0.0
+							zswl[0] = data[3]
+							node.ZHm0 = zhmo
+							node.ZSwl = zswl
+							nodes[nodeid] = node
+						}
 					}
 
-					node := nodes[nodeid]
-					zhmo := make([]float64, 1)
-					zswl := make([]float64, 1)
-					zhmo[0] = 0.0
-					zswl[0] = data[3]
-					node.ZHm0 = zhmo
-					node.ZSwl = zswl
-					nodes[nodeid] = node
 				}
+
 				loadData = false
 			}
 

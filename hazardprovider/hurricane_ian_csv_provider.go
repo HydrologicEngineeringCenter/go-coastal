@@ -96,10 +96,10 @@ func (csv *IanCSVFileProvider) HazardBoundary() (geography.BBox, error) {
 }
 func (csv *IanCSVFileProvider) Hazard(l geography.Location) (hazards.HazardEvent, error) {
 	he := csv.data[l]
-	if he.Has(hazards.WaveHeight) {
-		return he, nil
-	}
-	return he, errors.New("the hazard event has no wave")
+	//if he.Has(hazards.WaveHeight) {
+	return he, nil
+	//}
+	//return he, errors.New("the hazard event has no wave")
 }
 func (csv *IanCSVFileProvider) Close() {
 	fmt.Println("closing hazard provider")
